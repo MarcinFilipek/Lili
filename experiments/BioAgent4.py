@@ -43,7 +43,7 @@ class BioAgent4:
 
     def _hear(self, frame):
         windowed = frame * np.hamming(len(frame))
-        spectrum = np.fft.rfft(windowed, n=512)
+        spectrum = np.fft.rfft(windowed, n=2048)
         power = np.abs(spectrum) ** 2
         bins_per_band = len(power) // self.n_sensors
         bands = (
