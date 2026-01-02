@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from BioAgent4 import BioAgent4
 
 FS = 16000
-HOP_MS = 80
+HOP_MS = 25
 
 
 def generate_tone(duration_ms=200, frequency=440, amplitude=0.5):
@@ -233,6 +233,8 @@ def main():
     sequence = create_sequence(
         pattern=pattern, bpm=args.bpm, duration_sec=args.duration
     )
+
+    print(f"Generacja zakończona. Długość sekwencji: {len(sequence)} próbek")
 
     if args.mode == "offline":
         run_offline(agent, sequence, hop_size, args.save_csv)
