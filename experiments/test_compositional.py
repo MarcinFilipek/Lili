@@ -346,6 +346,24 @@ def agent_process(audio_queue):
     else:
         print("  ✗ Vectors too similar (poor frequency resolution)")
 
+    print("\n--- Direct Association Test ---")
+    W = agent.hebbian_memory.W
+
+    # Test B→C i B→Z bezpośrednio
+    response_B = W @ vec_B1  # Co B wywołuje?
+    sim_B_to_C = compare(response_B, vec_C)
+    sim_B_to_Z = compare(response_B, vec_Z)
+
+    print(f"Direct B→?: similarity to C={sim_B_to_C:.3f}, to Z={sim_B_to_Z:.3f}")
+    print(f"Difference: {abs(sim_B_to_C - sim_B_to_Z):.3f}")
+
+    if sim_B_to_C > sim_B_to_Z + 0.15:
+        print("✓ Hebbian weights learned correctly (C > Z)")
+    elif sim_B_to_Z > sim_B_to_C + 0.15:
+        print("✗ Recency bias dominant (Z > C)")
+    else:
+        print("? Ambiguous - weights don't distinguish")
+
     # ========================================================================
     # GENERATION TEST
     # ========================================================================

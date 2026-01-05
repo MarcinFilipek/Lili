@@ -54,8 +54,8 @@ class HebbianMemory:
         self.W_slow += lr_slow * delta
 
         # Decay (biologiczne zapominanie)
-        self.W_fast *= 0.9  # szybki zanik
-        self.W_slow *= 0.999  # wolny zanik
+        self.W_fast *= 0.95  # szybki zanik
+        self.W_slow *= 0.9995  # wolny zanik
 
         # Effective weight (suma śladów)
         self.W = self.W_fast + self.W_slow
