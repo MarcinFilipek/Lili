@@ -89,11 +89,11 @@ def audio_generator_process(audio_queue, sample_rate=16000, hop_size=400):
         ("A-B-C #1", seq([300, 1000, 2500])),
         ("A-B-C #2", seq([300, 1000, 2500])),
         ("A-B-C #3", seq([300, 1000, 2500])),
-        ("A-B-C #4", seq([300, 1000, 2500])),  # EXTRA
-        ("A-B-C #5", seq([300, 1000, 2500])),  # EXTRA
-        ("A-B-C #6", seq([300, 1000, 2500])),  # EXTRA
-        ("A-B-C #7", seq([300, 1000, 2500])),  # EXTRA
-        ("X-B-Z", seq([600, 1000, 3500])),
+        ("A-B-C #4", seq([300, 1000, 2500])),
+        ("A-B-C #5", seq([300, 1000, 2500])),
+        ("A-B-C #6", seq([300, 1000, 2500])),
+        ("A-B-C #7", seq([300, 1000, 2500])),
+        ("X-B-Z", seq([600, 1000, 3500])),  # LAST
     ]
 
     hop_duration = hop_size / sample_rate
@@ -346,23 +346,90 @@ def agent_process(audio_queue):
     else:
         print("  ✗ Vectors too similar (poor frequency resolution)")
 
-    print("\n--- Direct Association Test ---")
+    # ========================================================================
+    # DIRECT ASSOCIATION ANALYSIS
+    # ========================================================================
+
+    print("\n" + "=" * 70)
+    print("DIRECT ASSOCIATION ANALYSIS")
+    print("=" * 70)
+    print("Testing if Hebbian weights learned correct associations")
+    print()
+
     W = agent.hebbian_memory.W
 
-    # Test B→C i B→Z bezpośrednio
-    response_B = W @ vec_B1  # Co B wywołuje?
+    # === Test B → ? (what does B predict?) ===
+    print("--- Test 1: B → ? (Direct Association) ---")
+    response_B = W @ vec_B1  # What does B activate?
+
     sim_B_to_C = compare(response_B, vec_C)
     sim_B_to_Z = compare(response_B, vec_Z)
+    diff_B = abs(sim_B_to_C - sim_B_to_Z)
 
-    print(f"Direct B→?: similarity to C={sim_B_to_C:.3f}, to Z={sim_B_to_Z:.3f}")
-    print(f"Difference: {abs(sim_B_to_C - sim_B_to_Z):.3f}")
+    print(f"B → C similarity: {sim_B_to_C:.3f}")
+    print(f"B → Z similarity: {sim_B_to_Z:.3f}")
+    print(f"Difference: {diff_B:.3f} (threshold: 0.15)")
 
     if sim_B_to_C > sim_B_to_Z + 0.15:
-        print("✓ Hebbian weights learned correctly (C > Z)")
+        print("✓ Hebbian weights favor C (correct!)")
     elif sim_B_to_Z > sim_B_to_C + 0.15:
-        print("✗ Recency bias dominant (Z > C)")
+        print("✗ Hebbian weights favor Z (recency bias!)")
     else:
-        print("? Ambiguous - weights don't distinguish")
+        print("? Ambiguous - weights don't distinguish C from Z")
+        print("  → Problem is in LEARNING phase, not generation")
+
+    # === Test X → ? (what does X predict?) ===
+    print("\n--- Test 2: X → ? (Context Check) ---")
+    response_X = W @ vec_X
+
+    sim_X_to_B = compare(response_X, vec_B1)
+    sim_X_to_Z = compare(response_X, vec_Z)
+
+    print(f"X → B similarity: {sim_X_to_B:.3f}")
+    print(f"X → Z similarity: {sim_X_to_Z:.3f}")
+
+    if sim_X_to_Z > 0.5:
+        print("⚠ X strongly predicts Z (recency: X-B-Z)")
+        print("  → Context [X,B] might pull toward Z in generation")
+
+    # === Test A → ? (baseline check) ===
+    print("\n--- Test 3: A → ? (Baseline) ---")
+    response_A = W @ vec_A
+
+    sim_A_to_B = compare(response_A, vec_B1)
+    sim_A_to_C = compare(response_A, vec_C)
+
+    print(f"A → B similarity: {sim_A_to_B:.3f}")
+    print(f"A → C similarity: {sim_A_to_C:.3f}")
+
+    if sim_A_to_B < 0.5:
+        print("⚠ A doesn't strongly predict B (unexpected!)")
+
+    # === Weight Statistics ===
+    print("\n--- Weight Statistics ---")
+    stats = agent.hebbian_memory.get_stats()
+    print(f"Total weight norm: {stats['W_norm']:.3f}")
+    print(f"Fast trace norm: {stats['W_fast_norm']:.3f}")
+    print(f"Slow trace norm: {stats['W_slow_norm']:.3f}")
+    print(f"Max weight: {stats['max_weight']:.3f}")
+    print(f"Non-zero weights: {stats['non_zero_count']}/{stats['total_weights']}")
+
+    # === Diagnosis ===
+    print("\n--- DIAGNOSIS ---")
+    if diff_B < 0.15:
+        print("Issue: Hebbian weights don't distinguish B→C from B→Z")
+        print("\nLikely causes:")
+        print("  1. Aggressive decay (5% per learn) eats training advantage")
+        print("  2. Frequency discrimination poor (C vs Z too close)")
+        print("  3. Training ratio insufficient (7:1 not enough)")
+        print("\nRecommended fixes:")
+        print("  • Reduce decay: W_fast *= 0.98 (instead of 0.95)")
+        print("  • Increase ratio to 10:1 or 15:1")
+        print("  • Use more separated frequencies (e.g., C=4000Hz, Z=2000Hz)")
+    else:
+        print("✓ Hebbian weights learned correctly")
+        print("  → If generation still fails, problem is in generate() method")
+        print("  → Check context effect or exploration noise")
 
     # ========================================================================
     # GENERATION TEST
@@ -436,10 +503,10 @@ def agent_process(audio_queue):
 
 def main():
     print("=" * 70)
-    print("FULL COMPOSITIONAL TEST")
+    print("FULL COMPOSITIONAL TEST - ORIGINAL ORDER")
     print("=" * 70)
     print("\nTesting: A-B-C (7x) + X-B-Z (1x) → X-B-C?")
-    print("Strong training ratio (7:1) to overcome recency bias")
+    print("With optimized slow trace: lr=0.01, decay=0.99")
     print()
 
     audio_queue = mp.Queue(maxsize=10)

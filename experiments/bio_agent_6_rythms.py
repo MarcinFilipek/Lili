@@ -2,7 +2,8 @@ import queue
 import time
 import threading
 import numpy as np
-import sounddevice as sd
+
+import sounddevice as sd  # Not needed for test
 from hybrid_frequency_entrainment import HybridFrequencyEntrainment
 from brain_rythm import BrainRhythm
 from hebbian_memory import HebbianMemory
