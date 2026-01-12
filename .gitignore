@@ -23,3 +23,8 @@ wheels/
 .installed.cfg
 *.egg
 
+triangles_dataset/
+squares_dataset/
+*.pth
+*.npy
+*.png
