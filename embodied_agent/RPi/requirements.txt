@@ -1,0 +1,9 @@
+# SPI Communication
+spidev>=3.6
+
+# Camera support for Raspberry Pi
+picamera2>=0.3.12
+opencv-python>=4.8.0
+
+# Utility libraries
+numpy>=1.24.0
