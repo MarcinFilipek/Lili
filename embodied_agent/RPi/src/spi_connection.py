@@ -6,7 +6,7 @@ class SPIConnection:
         self.spi = spidev.SpiDev()
 
         try:
-             self.spi.open(0, 0)
+            self.spi.open(0, 0)
             self.spi.max_speed_hz = 500000
         except Exception as e:
             print(f"Error initializing SPI: {e}")
