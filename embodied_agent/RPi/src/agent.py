@@ -1,4 +1,5 @@
 from enum import Enum
+import cv2
 
 from motor_cortex import MotorCortex
 from vision_cortex import VisionCortex
@@ -20,8 +21,14 @@ class Agent:
 
     def life(self):
         while True:
-            self.vision_cortex.extract_features(self.eye.capture(gray=True, blur=True))
-            pass
+            frame = self.eye.capture(gray=True, blur=True)
+            self.vision_cortex.extract_features(frame)
+            cv2.imshow("Frame", frame)
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+
+        cv2.destroyAllWindows()
+        self.eye.close()
 
 
 def main():

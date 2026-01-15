@@ -26,4 +26,4 @@ class Eye:
         return frame
 
     def close(self):
-        self.eye.close()
+        self.eye.stop()
