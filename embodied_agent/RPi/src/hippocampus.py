@@ -1,8 +1,10 @@
 from brain_rythm import BrainRhythm
+import threading
+import time
 
 RHYTHMS = {
-    "theta": BrainRhythm(4),  # Hz
-    "delta": BrainRhythm(1),  # Hz
+    "theta": BrainRhythm(0),  # Hz
+    "delta": BrainRhythm(0),  # Hz
 }
 
 BRAIN_STATE = {"gamma": 0.0, "theta": 0.0, "delta": 0.0}
@@ -31,6 +33,8 @@ class Hippocampus:
     def __init__(self):
         self._theta_processed = True
         self._delta_processed = True
+        RHYTHMS["theta"].start(4)
+        RHYTHMS['delta'].start(1)
 
         start_global_rhythms()
 

@@ -1,3 +1,5 @@
+import numpy as np
+
 class VisionCortex:
     def __init__(self):
         self.feature_dims = {
