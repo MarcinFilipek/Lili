@@ -21,7 +21,9 @@ class Eye:
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
         if blur:
-            frame = cv2.GaussianBlur(frame, (5, 5), 0)
+            # frame = cv2.GaussianBlur(frame, (77, 77), 0)
+            frame = cv2.pyrDown(cv2.pyrDown(frame))
+            frame = cv2.pyrUp(cv2.pyrUp(frame))
 
         return frame
 

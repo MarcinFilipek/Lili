@@ -3,7 +3,7 @@ import cv2
 
 from motor_cortex import MotorCortex
 from vision_cortex import VisionCortex
-from Eye import Eye
+from eye import Eye
 
 
 class State(Enum):
