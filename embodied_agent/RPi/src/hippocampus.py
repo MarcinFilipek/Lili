@@ -31,24 +31,37 @@ def start_global_rhythms():
 
 class Hippocampus:
     def __init__(self):
+        self.stm_buffers = {"brightness": []}
+        self.max_buffer_size = 20
+
         self._theta_processed = True
         self._delta_processed = True
         RHYTHMS["theta"].start(4)
-        RHYTHMS['delta'].start(1)
+        RHYTHMS["delta"].start(1)
 
         start_global_rhythms()
 
-    def life(self):
-        self._theta_life()
+    def life(self, features, action):
+        self._theta_life(features, action)
         self._delta_life()
 
-    def _theta_life(self):
-        val = BRAIN_STATE["theta"]
-        if val > 0.95 and not self._theta_processed:
+    def _theta_life(self, features, action):
+        theta_val = BRAIN_STATE["theta"]
+        if theta_val > 0.95 and not self._theta_processed:
             self._theta_processed = True
             print("Processing theta frame")
-        elif val < 0:
+
+            for feature_name, feature_vec in features.items():
+                if feature_name in self.stm_buffers:
+                    buffer = self.stm_buffers[feature_name]
+                    buffer.append(
+                        {"type": "feature", "data": feature_vec.copy(), "theta": theta}
+                    )
+
+        elif theta_val < 0:
             self._theta_processed = False
+
+        return theta_val
 
     def _delta_life(self):
         val = BRAIN_STATE["delta"]
