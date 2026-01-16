@@ -1,4 +1,3 @@
-from enum import Enum
 import cv2
 
 from motor_cortex import MotorCortex
@@ -8,11 +7,6 @@ from hippocampus import Hippocampus
 from predictive_system import PredictiveSystem
 
 
-class State(Enum):
-    AWAKE = "awake"
-    SLEEP = "sleep"
-
-
 class Agent:
     def __init__(self):
         self.eye = Eye()
@@ -20,8 +14,6 @@ class Agent:
         self.vision_cortex = VisionCortex()
         self.hippocampus = Hippocampus()
         self.predictive_system = PredictiveSystem()
-
-        self.state: State = State.AWAKE
 
     def life(self):
         while True:
