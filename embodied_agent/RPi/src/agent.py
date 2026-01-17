@@ -27,6 +27,7 @@ class Agent:
             error, error_breakdown = self.predictive_system.compute_error(
                 predictions, features
             )
+            print(f"Error={error:.4f} | {error_breakdown}")
 
             action = self.select_action(features)
 
@@ -34,11 +35,11 @@ class Agent:
 
             self.motor_cortex.execute(action)
 
-            cv2.imshow("Frame", frame)
+            # cv2.imshow("Frame", frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
 
-        cv2.destroyAllWindows()
+        # cv2.destroyAllWindows()
         self.eye.close()
 
     def select_action(self, features):
