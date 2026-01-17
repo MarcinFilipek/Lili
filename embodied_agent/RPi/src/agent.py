@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 
 from motor_cortex import MotorCortex
 from vision_cortex import VisionCortex
