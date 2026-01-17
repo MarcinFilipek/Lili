@@ -62,6 +62,14 @@ class Hippocampus:
                         }
                     )
 
+                    buffer.append(
+                        {"type": "action", "data": action.copy(), "theta": theta_val}
+                    )
+
+                    # Trim buffer if too large
+                    if len(buffer) > self.max_buffer_size:
+                        buffer.pop(0)
+
         elif theta_val < 0:
             self._theta_processed = False
 
