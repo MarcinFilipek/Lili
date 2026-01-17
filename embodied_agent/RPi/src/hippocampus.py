@@ -55,7 +55,11 @@ class Hippocampus:
                 if feature_name in self.stm_buffers:
                     buffer = self.stm_buffers[feature_name]
                     buffer.append(
-                        {"type": "feature", "data": feature_vec.copy(), "theta": theta}
+                        {
+                            "type": "feature",
+                            "data": feature_vec.copy(),
+                            "theta": theta_val,
+                        }
                     )
 
         elif theta_val < 0:
