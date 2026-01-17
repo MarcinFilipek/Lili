@@ -15,25 +15,30 @@ class Agent:
         self.hippocampus = Hippocampus()
         self.predictive_system = PredictiveSystem()
 
+        self.previous_features = None
+
     def life(self):
         while True:
             frame = self.eye.capture(gray=True, blur=True)
             features = self.vision_cortex.extract_features(frame)
 
-            predictions = self.predictive_system.predict(
-                features, self.motor_cortex.action
-            )
+            if self.previous_features is not None:
+                predictions = self.predictive_system.predict(
+                    self.previous_features, self.motor_cortex.action
+                )
 
-            error, error_breakdown = self.predictive_system.compute_error(
-                predictions, features
-            )
-            print(f"Error={error:.4f} | {error_breakdown}")
+                error, error_breakdown = self.predictive_system.compute_error(
+                    predictions, features
+                )
+                print(f"Error={error:.4f} | {error_breakdown}")
 
             action = self.select_action(features)
 
             self.hippocampus.life(features, action)
 
             self.motor_cortex.execute(action)
+
+            self.previous_features = features
 
             # cv2.imshow("Frame", frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
@@ -43,7 +48,7 @@ class Agent:
         self.eye.close()
 
     def select_action(self, features):
-        return [0, 0, 0, 0, 1]
+        return np.array([0, 0, 0, 0, 1])
 
 
 def main():
