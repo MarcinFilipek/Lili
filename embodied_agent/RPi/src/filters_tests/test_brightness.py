@@ -72,7 +72,7 @@ def visualize_brightness(gray_frame):
     plt.colorbar(im, ax=axes[2])
     
     plt.tight_layout()
-    plt.savefig('/mnt/user-data/outputs/brightness_test.png', dpi=150, bbox_inches='tight')
+    plt.savefig('brightness_test.png', dpi=150, bbox_inches='tight')
     print("✓ Saved: brightness_test.png")
     plt.close()  # Close figure instead of show()
     

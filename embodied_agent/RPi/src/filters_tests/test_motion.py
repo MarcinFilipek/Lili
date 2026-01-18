@@ -136,7 +136,7 @@ def visualize_motion(current_frame, previous_frame):
     plt.colorbar(im2, ax=ax6)
     
     plt.tight_layout()
-    plt.savefig('/mnt/user-data/outputs/motion_test.png', dpi=150, bbox_inches='tight')
+    plt.savefig('motion_test.png', dpi=150, bbox_inches='tight')
     print("✓ Saved: motion_test.png")
     plt.close()  # Close figure instead of show()
     

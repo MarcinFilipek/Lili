@@ -96,7 +96,7 @@ def visualize_corners(gray_frame):
     plt.colorbar(im, ax=axes[1, 1])
     
     plt.tight_layout()
-    plt.savefig('/mnt/user-data/outputs/corners_test.png', dpi=150, bbox_inches='tight')
+    plt.savefig('corners_test.png', dpi=150, bbox_inches='tight')
     print("✓ Saved: corners_test.png")
     plt.close()  # Close figure instead of show()
     
