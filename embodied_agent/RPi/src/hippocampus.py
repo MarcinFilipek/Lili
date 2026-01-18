@@ -133,3 +133,49 @@ class Hippocampus:
     #             print(f"Total sequences extracted: {len(sequences)}\n")
 
     #     return sequences_by_feature
+
+
+# DOC
+"""
+
+🔵 Delta (δ)
+Zakres: ~0,5–4 Hz
+Najczęściej odpowiadają za:
+- głęboki sen (NREM, faza snu wolnofalowego)
+- regenerację organizmu
+- procesy naprawcze mózgu i ciała
+📌 U dorosłych na jawie – zwykle patologiczne lub bardzo rzadkie
+
+🟢 Theta (θ)
+Zakres: ~4–8 Hz
+Najczęściej odpowiadają za:
+- sen płytki, stan przed zaśnięciem i tuż po przebudzeniu
+- głęboką relaksację
+- kreatywność, wyobraźnię
+- przetwarzanie emocji i pamięć (szczególnie hipokamp)
+
+🟡 Alpha (α)
+Zakres: ~8–13 Hz
+Najczęściej odpowiadają za:
+- spokojną czujność
+- relaks przy zachowanej świadomości
+- „reset” uwagi
+-  stan flow o niskim pobudzeniu
+📌 Silne przy zamkniętych oczach
+
+🟠 Beta (β)
+Zakres: ~13–30 Hz
+Najczęściej odpowiadają za:
+- aktywne myślenie
+- koncentrację i analizę
+- rozwiązywanie problemów
+- napięcie i stres (wysokie beta)
+
+🔴 Gamma (γ)
+Zakres: ~30–100+ Hz
+Najczęściej odpowiadają za:
+- integrację informacji z różnych obszarów mózgu
+- wysoki poziom koncentracji
+- uczenie się i zapamiętywanie
+- świadomość i przetwarzanie złożonych bodźców
+"""
