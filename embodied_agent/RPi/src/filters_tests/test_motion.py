@@ -215,3 +215,15 @@ if __name__ == "__main__":
     print("- Bio-inspiration: MT cortex (motion processing)")
     print("- Use: Ego-motion detection, object tracking")
     print("\nNOTE: Motion requires TWO frames to compute!")
+
+
+# ✓ Captured frame from Picamera2
+# QObject::moveToThread: Current thread (0xe01a900) is not the object's thread (0xe353890).
+# Cannot move to target thread (0xe01a900)
+
+# qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "/home/uzume/Documents/PythonWorkspace/AudioAgent/embodied_agent/RPi/venv/lib/python3.13/site-packages/cv2/qt/plugins" even though it was found.
+# This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.
+
+# Available platform plugins are: xcb, eglfs, linuxfb, minimal, minimalegl, offscreen, vnc, wayland-egl, wayland, wayland-xcomposite-egl, wayland-xcomposite-glx.
+
+# Aborted
