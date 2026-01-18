@@ -4,6 +4,8 @@ Shows how brightness is extracted as 4x4 grid.
 """
 import cv2
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # Use non-GUI backend (for headless Raspberry Pi)
 import matplotlib.pyplot as plt
 
 
@@ -72,7 +74,7 @@ def visualize_brightness(gray_frame):
     plt.tight_layout()
     plt.savefig('/mnt/user-data/outputs/brightness_test.png', dpi=150, bbox_inches='tight')
     print("✓ Saved: brightness_test.png")
-    plt.show()
+    plt.close()  # Close figure instead of show()
     
     # Print feature vector
     print("\nBrightness feature vector (16 dims):")

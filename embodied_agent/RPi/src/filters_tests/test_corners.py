@@ -4,6 +4,8 @@ Shows Harris corner detection in 6x6 grid.
 """
 import cv2
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # Use non-GUI backend (for headless Raspberry Pi)
 import matplotlib.pyplot as plt
 
 
@@ -96,7 +98,7 @@ def visualize_corners(gray_frame):
     plt.tight_layout()
     plt.savefig('/mnt/user-data/outputs/corners_test.png', dpi=150, bbox_inches='tight')
     print("✓ Saved: corners_test.png")
-    plt.show()
+    plt.close()  # Close figure instead of show()
     
     # Print feature vector
     print("\nCorners feature vector (36 dims):")

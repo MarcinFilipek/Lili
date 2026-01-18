@@ -4,6 +4,8 @@ Shows Sobel edge detection in 8x8 grid.
 """
 import cv2
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # Use non-GUI backend (for headless Raspberry Pi)
 import matplotlib.pyplot as plt
 
 
@@ -84,7 +86,7 @@ def visualize_edges(gray_frame):
     plt.tight_layout()
     plt.savefig('/mnt/user-data/outputs/edges_test.png', dpi=150, bbox_inches='tight')
     print("✓ Saved: edges_test.png")
-    plt.show()
+    plt.close()  # Close figure instead of show()
     
     # Print feature vector
     print("\nEdges feature vector (64 dims):")
