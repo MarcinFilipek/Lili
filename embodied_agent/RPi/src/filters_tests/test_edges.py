@@ -96,26 +96,31 @@ def visualize_edges(gray_frame):
 
 
 if __name__ == "__main__":
-    # Option 1: Load from webcam
-    print("Opening webcam...")
-    cap = cv2.VideoCapture(0)
-    
-    if cap.isOpened():
-        ret, frame = cap.read()
-        if ret:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            cap.release()
-            print("✓ Captured frame from webcam")
-        else:
-            print("✗ Failed to capture from webcam")
-            # Fallback: create test pattern with edges
-            gray = np.zeros((480, 640), dtype=np.uint8)
-            # Add some shapes
-            cv2.rectangle(gray, (100, 100), (300, 300), 255, -1)
-            cv2.circle(gray, (450, 240), 100, 128, -1)
-            print("Using synthetic test image with shapes")
-    else:
-        print("✗ Webcam not available")
+    # Try to use Picamera2
+    try:
+        from picamera2 import Picamera2
+        
+        print("Opening Picamera2...")
+        width = 640
+        height = 480
+        
+        picam = Picamera2()
+        cam_conf = picam.create_video_configuration(
+            main={"format": "RGB888", "size": (width, height)}
+        )
+        picam.configure(cam_conf)
+        picam.start()
+        
+        # Capture frame
+        frame = picam.capture_array()
+        gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+        
+        picam.stop()
+        picam.close()
+        print("✓ Captured frame from Picamera2")
+        
+    except Exception as e:
+        print(f"✗ Picamera2 not available: {e}")
         # Create test image with edges
         gray = np.zeros((480, 640), dtype=np.uint8)
         cv2.rectangle(gray, (100, 100), (300, 300), 255, -1)

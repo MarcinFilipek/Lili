@@ -82,24 +82,32 @@ def visualize_brightness(gray_frame):
 
 
 if __name__ == "__main__":
-    # Option 1: Load from webcam
-    print("Opening webcam...")
-    cap = cv2.VideoCapture(0)
-    
-    if cap.isOpened():
-        ret, frame = cap.read()
-        if ret:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            cap.release()
-            print("✓ Captured frame from webcam")
-        else:
-            print("✗ Failed to capture from webcam")
-            # Fallback to test image
-            gray = np.random.randint(0, 255, (480, 640), dtype=np.uint8)
-            print("Using random test image")
-    else:
-        print("✗ Webcam not available")
-        # Create test image
+    # Try to use Picamera2
+    try:
+        from picamera2 import Picamera2
+        
+        print("Opening Picamera2...")
+        width = 640
+        height = 480
+        
+        picam = Picamera2()
+        cam_conf = picam.create_video_configuration(
+            main={"format": "RGB888", "size": (width, height)}
+        )
+        picam.configure(cam_conf)
+        picam.start()
+        
+        # Capture frame
+        frame = picam.capture_array()
+        gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+        
+        picam.stop()
+        picam.close()
+        print("✓ Captured frame from Picamera2")
+        
+    except Exception as e:
+        print(f"✗ Picamera2 not available: {e}")
+        # Fallback to test image
         gray = np.random.randint(0, 255, (480, 640), dtype=np.uint8)
         print("Using random test image")
     

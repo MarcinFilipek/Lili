@@ -147,43 +147,45 @@ def visualize_motion(current_frame, previous_frame):
 
 
 if __name__ == "__main__":
-    print("Opening webcam for motion detection...")
+    print("Opening Picamera2 for motion detection...")
     print("Move something in front of the camera or move the camera!")
     
-    cap = cv2.VideoCapture(0)
-    
-    if cap.isOpened():
-        print("✓ Webcam opened")
+    # Try to use Picamera2
+    try:
+        from picamera2 import Picamera2
+        
+        width = 640
+        height = 480
+        
+        picam = Picamera2()
+        cam_conf = picam.create_video_configuration(
+            main={"format": "RGB888", "size": (width, height)}
+        )
+        picam.configure(cam_conf)
+        picam.start()
+        
+        print("✓ Picamera2 opened")
         print("Capturing frames...")
         
         # Wait a bit for camera to adjust
         time.sleep(0.5)
         
         # Capture first frame
-        ret1, frame1 = cap.read()
-        if not ret1:
-            print("✗ Failed to capture first frame")
-            cap.release()
-            exit(1)
-        
-        prev_gray = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
+        frame1 = picam.capture_array()
+        prev_gray = cv2.cvtColor(frame1, cv2.COLOR_RGB2GRAY)
         
         # Wait a bit and capture second frame
         time.sleep(0.2)
         
-        ret2, frame2 = cap.read()
-        if not ret2:
-            print("✗ Failed to capture second frame")
-            cap.release()
-            exit(1)
+        frame2 = picam.capture_array()
+        curr_gray = cv2.cvtColor(frame2, cv2.COLOR_RGB2GRAY)
         
-        curr_gray = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
-        
-        cap.release()
+        picam.stop()
+        picam.close()
         print("✓ Captured two consecutive frames")
         
-    else:
-        print("✗ Webcam not available")
+    except Exception as e:
+        print(f"✗ Picamera2 not available: {e}")
         print("Creating synthetic motion example...")
         
         # Create two frames with simulated motion
