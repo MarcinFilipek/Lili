@@ -2,7 +2,7 @@ import numpy as np
 
 
 class Hippocampus:
-    def __init__(self, rhythms, brain_state):
+    def __init__(self, rhythms):
         self.stm_buffers = {"brightness": []}
         self.max_buffer_size = 20
 
@@ -15,7 +15,6 @@ class Hippocampus:
         self._delta_processed = True
 
         self.rhythms = rhythms
-        self.brain_state = brain_state
 
         self.rhythms["gamma"].start(40)
         # self.rhythms["beta"].start(13)
@@ -41,7 +40,7 @@ class Hippocampus:
             self.rhythms["gamma"].start(40)
 
     def _gamma_life(self, features, action):
-        gamma_val = self.brain_state["gamma"]
+        gamma_val = self.rhythms["gamma"].value
         if gamma_val > 0.95 and not self._gamma_processed:
             self._gamma_processed = True
             print("🔴 γ - gamma processing")
@@ -69,7 +68,7 @@ class Hippocampus:
             self._gamma_processed = False
 
     def _beta_life(self, features, action):
-        beta_val = self.brain_state["beta"]
+        beta_val = self.rhythms["beta"].value
         if beta_val > 0.95 and not self._beta_processed:
             self._beta_processed = True
             print("🟠 β - beta processing")
@@ -77,7 +76,7 @@ class Hippocampus:
             self._beta_processed = False
 
     def _alpha_life(self, features, action):
-        alpha_val = self.brain_state["alpha"]
+        alpha_val = self.rhythms["alpha"].value
         if alpha_val > 0.95 and not self._alpha_processed:
             self._alpha_processed = True
             print("🟡 α - alpha processing")
@@ -85,7 +84,7 @@ class Hippocampus:
             self._alpha_processed = False
 
     def _theta_life(self, features, action):
-        theta_val = self.brain_state["theta"]
+        theta_val = self.rhythms["theta"].value
         if theta_val > 0.95 and not self._theta_processed:
             self._theta_processed = True
             print("🟢 θ - theta processing")
@@ -96,7 +95,7 @@ class Hippocampus:
         return theta_val
 
     def _delta_life(self, features, action):
-        val = self.brain_state["delta"]
+        val = self.rhythms["delta"].value
         if val > 0.95 and not self._delta_processed:
             self._delta_processed = True
             print("🟣 δ - delta processing")
