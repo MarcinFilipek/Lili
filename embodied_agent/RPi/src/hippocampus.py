@@ -1,46 +1,47 @@
 import numpy as np
-from brain_rythm import BrainRhythm
-import threading
-import time
 
-RHYTHMS = {
-    "gamma": BrainRhythm(0),  # Hz
-    "beta": BrainRhythm(0),  # Hz
-    "alpha": BrainRhythm(0),  # Hz
-    "theta": BrainRhythm(0),  # Hz
-    "delta": BrainRhythm(0),  # Hz
-}
+# from brain_rythm import BrainRhythm
+# import threading
+# import time
 
-BRAIN_STATE = {
-    "gamma": 0.0,
-    "beta": 0.0,
-    "alpha": 0.0,
-    "theta": 0.0,
-    "delta": 0.0,
-}
+# RHYTHMS = {
+#     "gamma": BrainRhythm(0),  # Hz
+#     "beta": BrainRhythm(0),  # Hz
+#     "alpha": BrainRhythm(0),  # Hz
+#     "theta": BrainRhythm(0),  # Hz
+#     "delta": BrainRhythm(0),  # Hz
+# }
 
-
-def update_brain_state_loop():
-    """
-    Wątek aktualizujący rytmy z akumulacją fazy.
-    """
-    while True:
-        for name, rhythm in RHYTHMS.items():
-            rhythm.update()
-            BRAIN_STATE[name] = rhythm.value
-
-        # Wysoka częstotliwość odświeżania dla płynności
-        time.sleep(0.001)
+# BRAIN_STATE = {
+#     "gamma": 0.0,
+#     "beta": 0.0,
+#     "alpha": 0.0,
+#     "theta": 0.0,
+#     "delta": 0.0,
+# }
 
 
-def start_global_rhythms():
-    print("Startuje globalne rytmy mózgowe (Phase Accumulator)...")
-    t = threading.Thread(target=update_brain_state_loop, daemon=True)
-    t.start()
+# def update_brain_state_loop():
+#     """
+#     Wątek aktualizujący rytmy z akumulacją fazy.
+#     """
+#     while True:
+#         for name, rhythm in RHYTHMS.items():
+#             rhythm.update()
+#             BRAIN_STATE[name] = rhythm.value
+
+#         # Wysoka częstotliwość odświeżania dla płynności
+#         time.sleep(0.001)
+
+
+# def start_global_rhythms():
+#     print("Startuje globalne rytmy mózgowe (Phase Accumulator)...")
+#     t = threading.Thread(target=update_brain_state_loop, daemon=True)
+#     t.start()
 
 
 class Hippocampus:
-    def __init__(self):
+    def __init__(self, rhythms, brain_state):
         self.stm_buffers = {"brightness": []}
         self.max_buffer_size = 20
 
@@ -52,11 +53,14 @@ class Hippocampus:
         self._theta_processed = True
         self._delta_processed = True
 
-        RHYTHMS["gamma"].start(40)
-        RHYTHMS["beta"].start(13)
-        RHYTHMS["alpha"].start(8)
-        RHYTHMS["theta"].start(4)
-        RHYTHMS["delta"].start(1)
+        self.rhythms = rhythms
+        self.brain_state = brain_state
+
+        self.rhythms["gamma"].start(40)
+        self.rhythms["beta"].start(13)
+        self.rhythms["alpha"].start(8)
+        self.rhythms["theta"].start(4)
+        self.rhythms["delta"].start(1)
 
         start_global_rhythms()
 
@@ -68,12 +72,12 @@ class Hippocampus:
         self._delta_life(features, action)
 
     def go_sleep(self):
-        if RHYTHMS["gamma"].is_started():
-            print("\n💤 Error too high, entering sleep...")
-            RHYTHMS["gamma"].stop()
+        if self.rhythms["gamma"].is_started():
+            print("\n💤 Entering sleep...")
+            self.rhythms["gamma"].stop()
 
     def _gamma_life(self, features, action):
-        gamma_val = BRAIN_STATE["gamma"]
+        gamma_val = self.brain_state["gamma"]
         if gamma_val > 0.95 and not self._gamma_processed:
             self._gamma_processed = True
             print("🔴 γ - gamma processing")
@@ -101,7 +105,7 @@ class Hippocampus:
             self._gamma_processed = False
 
     def _beta_life(self, features, action):
-        beta_val = BRAIN_STATE["beta"]
+        beta_val = self.brain_state["beta"]
         if beta_val > 0.95 and not self._beta_processed:
             self._beta_processed = True
             print("🟠 β - beta processing")
@@ -109,7 +113,7 @@ class Hippocampus:
             self._beta_processed = False
 
     def _alpha_life(self, features, action):
-        alpha_val = BRAIN_STATE["alpha"]
+        alpha_val = self.brain_state["alpha"]
         if alpha_val > 0.95 and not self._alpha_processed:
             self._alpha_processed = True
             print("🟡 α - alpha processing")
@@ -117,7 +121,7 @@ class Hippocampus:
             self._alpha_processed = False
 
     def _theta_life(self, features, action):
-        theta_val = BRAIN_STATE["theta"]
+        theta_val = self.brain_state["theta"]
         if theta_val > 0.95 and not self._theta_processed:
             self._theta_processed = True
             print("🟢 θ - theta processing")
@@ -147,7 +151,7 @@ class Hippocampus:
         return theta_val
 
     def _delta_life(self, features, action):
-        val = BRAIN_STATE["delta"]
+        val = self.brain_state["delta"]
         if val > 0.95 and not self._delta_processed:
             self._delta_processed = True
             print("🟣 δ - delta processing")

@@ -6,6 +6,45 @@ from vision_cortex import VisionCortex
 from eye import Eye
 from hippocampus import Hippocampus
 from predictive_system import PredictiveSystem
+from brain_rythm import BrainRhythm
+import threading
+import time
+
+
+RHYTHMS = {
+    "gamma": BrainRhythm(0),  # Hz
+    "beta": BrainRhythm(0),  # Hz
+    "alpha": BrainRhythm(0),  # Hz
+    "theta": BrainRhythm(0),  # Hz
+    "delta": BrainRhythm(0),  # Hz
+}
+
+BRAIN_STATE = {
+    "gamma": 0.0,
+    "beta": 0.0,
+    "alpha": 0.0,
+    "theta": 0.0,
+    "delta": 0.0,
+}
+
+
+def update_brain_state_loop():
+    """
+    Wątek aktualizujący rytmy z akumulacją fazy.
+    """
+    while True:
+        for name, rhythm in RHYTHMS.items():
+            rhythm.update()
+            BRAIN_STATE[name] = rhythm.value
+
+        # Wysoka częstotliwość odświeżania dla płynności
+        time.sleep(0.001)
+
+
+def start_global_rhythms():
+    print("Startuje globalne rytmy mózgowe (Phase Accumulator)...")
+    t = threading.Thread(target=update_brain_state_loop, daemon=True)
+    t.start()
 
 
 class Agent:
@@ -13,12 +52,14 @@ class Agent:
         self.eye = Eye()
         self.motor_cortex = MotorCortex()
         self.vision_cortex = VisionCortex()
-        self.hippocampus = Hippocampus()
+        self.hippocampus = Hippocampus(RHYTHMS, BRAIN_STATE)
         self.predictive_system = PredictiveSystem(self.hippocampus.ltm_sequences)
 
-        self.frustration = 0.0  # akumuluje się przy błędach
-        self.frustration_threshold = 5.0  # próg zmęczenia
-        self.frustration_decay = 0.1  # maleje gdy error niski
+        start_global_rhythms()
+
+        self.frustration = 0.0
+        self.frustration_threshold = 5.0
+        self.frustration_decay = 0.1
         self.error_threshold = 0.1
 
         self.previous_features = None
@@ -43,7 +84,7 @@ class Agent:
 
             if error > self.error_threshold:
                 self.frustration += error  # rośnie proporcjonalnie do błędu
-                print(f"  ⚠️ Error={error:.3f}, frustration={self.frustration:.2f}")
+                print(f"    ⚠️ Error={error:.3f}, frustration={self.frustration:.2f}")
             else:
                 self.frustration = max(0, self.frustration - self.frustration_decay)
 
