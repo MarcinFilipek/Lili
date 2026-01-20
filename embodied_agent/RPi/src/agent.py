@@ -53,7 +53,7 @@ class Agent:
         self.motor_cortex = MotorCortex()
         self.vision_cortex = VisionCortex()
         self.hippocampus = Hippocampus(rhythms=RHYTHMS, brain_state=BRAIN_STATE)
-        self.predictive_system = PredictiveSystem(self.hippocampus.ltm_sequences)
+        self.predictive_system = PredictiveSystem()
 
         self.frustration = 0.0
         self.frustration_threshold = 5.0
@@ -61,6 +61,7 @@ class Agent:
         self.error_threshold = 0.1
 
         self.previous_features = None
+        selt._theta_processed = True
 
         start_global_rhythms()
 
@@ -94,18 +95,15 @@ class Agent:
 
             self.motor_cortex.execute(action)
 
-            """
-            if delta > 0.9:
-                sequences = self.hippocampus.get_recent_sequences(n=5)
-                total_seqs = sum(len(s) for s in sequences.values())
-                
-                if total_seqs > 0:
-                    # Gentle online learning
-                    self.predictive_system.consolidate(
-                    sequences, 
-                    learning_rate=self.delta_lr_awake
-                )
-            """
+            val = BRAIN_STATE["theta"]
+            if val > 0.95 and not self._theta_processed:
+                print("🟣 θ - theta processing")
+                self._theta_processed = True
+                seq = self.hippocampus.extract_sequences()
+                if len(seq) > 0:
+                    self.predictive_system.consolidate(seq, learning_rate=0.01)
+            elif val < 0:
+                self._theta_processed = False
 
             self.previous_features = features
 
