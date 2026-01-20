@@ -27,7 +27,7 @@ class Agent:
             if self.previous_features is None:
                 self.previous_features = features
                 self.hippocampus.life(features, self.motor_cortex.action)
-                return
+                continue
 
             predictions = self.predictive_system.predict(
                 self.previous_features, self.motor_cortex.action
