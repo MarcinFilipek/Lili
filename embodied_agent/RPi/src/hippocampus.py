@@ -35,6 +35,11 @@ class Hippocampus:
             print("\n💤 Entering sleep...")
             self.rhythms["gamma"].stop()
 
+    def wake_up(self):
+        if not self.rhythms["gamma"].is_started():
+            print("\n☀️ Waking up...")
+            self.rhythms["gamma"].start(40)
+
     def _gamma_life(self, features, action):
         gamma_val = self.brain_state["gamma"]
         if gamma_val > 0.95 and not self._gamma_processed:
@@ -84,25 +89,6 @@ class Hippocampus:
         if theta_val > 0.95 and not self._theta_processed:
             self._theta_processed = True
             print("🟢 θ - theta processing")
-
-            # for feature_name, feature_vec in features.items():
-            #     if feature_name in self.stm_buffers:
-            #         buffer = self.stm_buffers[feature_name]
-            #         buffer.append(
-            #             {
-            #                 "type": "feature",
-            #                 "data": feature_vec.copy(),
-            #                 "theta": theta_val,
-            #             }
-            #         )
-
-            #         buffer.append(
-            #             {"type": "action", "data": action.copy(), "theta": theta_val}
-            #         )
-
-            #         # Trim buffer if too large
-            #         if len(buffer) > self.max_buffer_size:
-            #             buffer.pop(0)
 
         elif theta_val < 0:
             self._theta_processed = False

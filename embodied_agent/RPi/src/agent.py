@@ -100,8 +100,9 @@ class Agent:
                 print("🟣 θ - theta processing")
                 self._theta_processed = True
                 seq = self.hippocampus.extract_sequences()
+                lr = 0.00001 if RHYTHMS["gamma"].is_started() else 0.01
                 if len(seq) > 0:
-                    self.predictive_system.consolidate(seq, learning_rate=0.01)
+                    self.predictive_system.consolidate(seq, learning_rate=lr)
             elif val < 0:
                 self._theta_processed = False
 
@@ -110,6 +111,9 @@ class Agent:
             if self.frustration > self.frustration_threshold:
                 self.hippocampus.go_sleep()
                 continue
+
+            if not RHYTHMS["gamma"].is_started() and error < self.error_threshold:
+                self.hippocampus.wake_up()
 
             # cv2.imshow("Frame", frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
