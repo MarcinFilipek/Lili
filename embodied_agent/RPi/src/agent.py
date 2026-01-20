@@ -1,55 +1,54 @@
 import cv2
 import numpy as np
 
+from brain_state import BrainState
 from motor_cortex import MotorCortex
 from vision_cortex import VisionCortex
 from eye import Eye
 from hippocampus import Hippocampus
 from predictive_system import PredictiveSystem
-from brain_rythm import BrainRhythm
-import threading
-import time
 
 
-RHYTHMS = {
-    "gamma": BrainRhythm(0),  # Hz
-    "beta": BrainRhythm(0),  # Hz
-    "alpha": BrainRhythm(0),  # Hz
-    "theta": BrainRhythm(0),  # Hz
-    "delta": BrainRhythm(0),  # Hz
-}
+# RHYTHMS = {
+#     "gamma": BrainRhythm(0),  # Hz
+#     "beta": BrainRhythm(0),  # Hz
+#     "alpha": BrainRhythm(0),  # Hz
+#     "theta": BrainRhythm(0),  # Hz
+#     "delta": BrainRhythm(0),  # Hz
+# }
 
-BRAIN_STATE = {
-    "gamma": 0.0,
-    "beta": 0.0,
-    "alpha": 0.0,
-    "theta": 0.0,
-    "delta": 0.0,
-}
-
-
-def update_brain_state_loop():
-    """
-    Wątek aktualizujący rytmy z akumulacją fazy.
-    """
-    while True:
-        for name, rhythm in RHYTHMS.items():
-            rhythm.update()
-            BRAIN_STATE[name] = rhythm.value
-
-        # Wysoka częstotliwość odświeżania dla płynności
-        time.sleep(0.001)
+# BRAIN_STATE = {
+#     "gamma": 0.0,
+#     "beta": 0.0,
+#     "alpha": 0.0,
+#     "theta": 0.0,
+#     "delta": 0.0,
+# }
 
 
-def start_global_rhythms():
-    print("Startuje globalne rytmy mózgowe (Phase Accumulator)...")
-    t = threading.Thread(target=update_brain_state_loop, daemon=True)
-    t.start()
+# def update_brain_state_loop():
+#     """
+#     Wątek aktualizujący rytmy z akumulacją fazy.
+#     """
+#     while True:
+#         for name, rhythm in RHYTHMS.items():
+#             rhythm.update()
+#             BRAIN_STATE[name] = rhythm.value
+
+#         # Wysoka częstotliwość odświeżania dla płynności
+#         time.sleep(0.001)
+
+
+# def start_global_rhythms():
+#     print("Startuje globalne rytmy mózgowe (Phase Accumulator)...")
+#     t = threading.Thread(target=update_brain_state_loop, daemon=True)
+#     t.start()
 
 
 class Agent:
     def __init__(self):
         self.eye = Eye()
+        self.brain_state = BrainState()
         self.motor_cortex = MotorCortex()
         self.vision_cortex = VisionCortex()
         self.hippocampus = Hippocampus(rhythms=RHYTHMS, brain_state=BRAIN_STATE)
@@ -63,7 +62,9 @@ class Agent:
         self.previous_features = None
         self._theta_processed = True
 
-        start_global_rhythms()
+        self.gamma_rhythm = self.brain_state.rhythms["gamma"]
+        self.theta_state = self.brain_state.state["theta"]
+        self.brain_state.start()
 
     def life(self):
         while True:
@@ -83,7 +84,7 @@ class Agent:
                 predictions, features
             )
 
-            if error > self.error_threshold and RHYTHMS["gamma"].is_started():
+            if error > self.error_threshold and self.gamma_rhythm.is_started():
                 self.frustration += error  # rośnie proporcjonalnie do błędu
             else:
                 self.frustration = max(0, self.frustration - self.frustration_decay)
@@ -94,12 +95,12 @@ class Agent:
 
             self.motor_cortex.execute(action)
 
-            val = BRAIN_STATE["theta"]
+            val = self.theta_state
             if val > 0.95 and not self._theta_processed:
                 print("🟣 θ - theta processing")
                 self._theta_processed = True
                 seq = self.hippocampus.extract_sequences()
-                lr = 0.00001 if RHYTHMS["gamma"].is_started() else 0.01
+                lr = 0.0005 if self.gamma_rhythm.is_started() else 0.01
                 if len(seq) > 0:
                     self.predictive_system.consolidate(seq, learning_rate=lr)
             elif val < 0:
@@ -112,7 +113,7 @@ class Agent:
                 self.hippocampus.go_sleep()
                 continue
 
-            if not RHYTHMS["gamma"].is_started() and error < self.error_threshold:
+            if not self.gamma_rhythm.is_started() and error < self.error_threshold:
                 self.hippocampus.wake_up()
                 self.frustration = 0.0
                 print(f"    ⚠️ Error={error:.3f}, frustration={self.frustration:.2f}")
