@@ -85,7 +85,7 @@ class Agent:
 
             print(f"    ⚠️ Error={error:.3f}, frustration={self.frustration:.2f}")
 
-            if error > self.error_threshold:
+            if error > self.error_threshold and RHYTHMS["gamma"].is_started():
                 self.frustration += error  # rośnie proporcjonalnie do błędu
             else:
                 self.frustration = max(0, self.frustration - self.frustration_decay)
