@@ -46,7 +46,6 @@ class BrainRhythm:
         self.current_freq = 0
         self.phase = 0
         self.value = 0
-        self._started = False
 
     def is_started(self):
         """Check if rhythm is active"""
