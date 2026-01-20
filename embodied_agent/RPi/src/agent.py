@@ -109,6 +109,7 @@ class Agent:
                 self._theta_processed = False
 
             self.previous_features = features
+                print(f"    ⚠️ Error={error:.3f}, frustration={self.frustration:.2f}")
 
             if self.frustration > self.frustration_threshold:
                 print(f"    ⚠️ Error={error:.3f}, frustration={self.frustration:.2f}")
