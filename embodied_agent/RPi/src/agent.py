@@ -71,7 +71,7 @@ class Agent:
 
             self.previous_features = features
 
-            if error > self.frustration_threshold:
+            if self.frustration > self.frustration_threshold:
                 self.hippocampus.go_sleep()
                 continue
 
