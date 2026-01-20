@@ -60,11 +60,11 @@ class Hippocampus:
         start_global_rhythms()
 
     def life(self, features, action):
-        self._gamma_life()
-        self._beta_life()
-        self._alpha_life()
+        self._gamma_life(features, action)
+        self._beta_life(features, action)
+        self._alpha_life(features, action)
         self._theta_life(features, action)
-        self._delta_life()
+        self._delta_life(features, action)
 
     def _gamma_life(self, features, action):
         gamma_val = BRAIN_STATE["gamma"]
