@@ -23,17 +23,20 @@ class Agent:
         while True:
             frame = self.eye.capture(gray=True, blur=True)
             features = self.vision_cortex.extract_features(frame)
-            print("New features")
 
-            if self.previous_features is not None:
-                predictions = self.predictive_system.predict(
-                    self.previous_features, self.motor_cortex.action
-                )
+            if self.previous_features is None:
+                self.previous_features = features
+                self.hippocampus.life(features, self.motor_cortex.action)
+                return
 
-                error, error_breakdown = self.predictive_system.compute_error(
-                    predictions, features
-                )
-                print(f"Error={error:.4f} | {error_breakdown}")
+            predictions = self.predictive_system.predict(
+                self.previous_features, self.motor_cortex.action
+            )
+
+            error, error_breakdown = self.predictive_system.compute_error(
+                predictions, features
+            )
+            print(f"Error={error:.4f} | {error_breakdown}")
 
             action = self.select_action(features)
 
