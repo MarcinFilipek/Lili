@@ -44,6 +44,9 @@ class Agent:
 
             self.motor_cortex.execute(action)
 
+            print(f"STM: {self.hippocampus.stm_buffers}")
+            print(f"Sequences: {self.hippocampus.extract_sequences(verbose=True)}")
+
             """
             if delta > 0.9:
                 sequences = self.hippocampus.get_recent_sequences(n=5)
