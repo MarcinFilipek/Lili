@@ -68,8 +68,9 @@ class Hippocampus:
         self._delta_life(features, action)
 
     def go_sleep(self):
-        print("\n💤 Error too high, entering sleep...")
-        RHYTHMS["gamma"].stop()
+        if RHYTHMS["gamma"].is_started():
+            print("\n💤 Error too high, entering sleep...")
+            RHYTHMS["gamma"].stop()
 
     def _gamma_life(self, features, action):
         gamma_val = BRAIN_STATE["gamma"]
