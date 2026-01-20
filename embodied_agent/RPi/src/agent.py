@@ -16,7 +16,11 @@ class Agent:
         self.hippocampus = Hippocampus()
         self.predictive_system = PredictiveSystem(self.hippocampus.ltm_sequences)
 
-        self.sleep_threshold = 0.1
+        self.frustration = 0.0  # akumuluje się przy błędach
+        self.frustration_threshold = 5.0  # próg zmęczenia
+        self.frustration_decay = 0.1  # maleje gdy error niski
+        self.error_threshold = 0.1
+
         self.previous_features = None
 
     def life(self):
@@ -36,7 +40,12 @@ class Agent:
             error, error_breakdown = self.predictive_system.compute_error(
                 predictions, features
             )
-            print(f"Error={error:.4f} | {error_breakdown}")
+
+            if error > self.error_threshold:
+                self.frustration += error  # rośnie proporcjonalnie do błędu
+                print(f"  ⚠️ Error={error:.3f}, frustration={self.frustration:.2f}")
+            else:
+                self.frustration = max(0, self.frustration - self.frustration_decay)
 
             action = self.select_action(features)
 
@@ -62,7 +71,7 @@ class Agent:
 
             self.previous_features = features
 
-            if error > self.sleep_threshold:
+            if error > self.frustration_threshold:
                 self.hippocampus.go_sleep()
                 continue
 
