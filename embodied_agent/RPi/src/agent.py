@@ -61,7 +61,7 @@ class Agent:
         self.error_threshold = 0.1
 
         self.previous_features = None
-        selt._theta_processed = True
+        self._theta_processed = True
 
         start_global_rhythms()
 
