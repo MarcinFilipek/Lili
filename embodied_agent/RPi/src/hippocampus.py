@@ -1,44 +1,5 @@
 import numpy as np
 
-# from brain_rythm import BrainRhythm
-# import threading
-# import time
-
-# RHYTHMS = {
-#     "gamma": BrainRhythm(0),  # Hz
-#     "beta": BrainRhythm(0),  # Hz
-#     "alpha": BrainRhythm(0),  # Hz
-#     "theta": BrainRhythm(0),  # Hz
-#     "delta": BrainRhythm(0),  # Hz
-# }
-
-# BRAIN_STATE = {
-#     "gamma": 0.0,
-#     "beta": 0.0,
-#     "alpha": 0.0,
-#     "theta": 0.0,
-#     "delta": 0.0,
-# }
-
-
-# def update_brain_state_loop():
-#     """
-#     Wątek aktualizujący rytmy z akumulacją fazy.
-#     """
-#     while True:
-#         for name, rhythm in RHYTHMS.items():
-#             rhythm.update()
-#             BRAIN_STATE[name] = rhythm.value
-
-#         # Wysoka częstotliwość odświeżania dla płynności
-#         time.sleep(0.001)
-
-
-# def start_global_rhythms():
-#     print("Startuje globalne rytmy mózgowe (Phase Accumulator)...")
-#     t = threading.Thread(target=update_brain_state_loop, daemon=True)
-#     t.start()
-
 
 class Hippocampus:
     def __init__(self, rhythms, brain_state):

@@ -52,10 +52,8 @@ class Agent:
         self.eye = Eye()
         self.motor_cortex = MotorCortex()
         self.vision_cortex = VisionCortex()
-        self.hippocampus = Hippocampus(RHYTHMS, BRAIN_STATE)
+        self.hippocampus = Hippocampus(rhythms=RHYTHMS, brain_state=BRAIN_STATE)
         self.predictive_system = PredictiveSystem(self.hippocampus.ltm_sequences)
-
-        start_global_rhythms()
 
         self.frustration = 0.0
         self.frustration_threshold = 5.0
@@ -63,6 +61,8 @@ class Agent:
         self.error_threshold = 0.1
 
         self.previous_features = None
+
+        start_global_rhythms()
 
     def life(self):
         while True:
