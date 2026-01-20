@@ -83,9 +83,10 @@ class Agent:
                 predictions, features
             )
 
+            print(f"    ⚠️ Error={error:.3f}, frustration={self.frustration:.2f}")
+
             if error > self.error_threshold:
                 self.frustration += error  # rośnie proporcjonalnie do błędu
-                print(f"    ⚠️ Error={error:.3f}, frustration={self.frustration:.2f}")
             else:
                 self.frustration = max(0, self.frustration - self.frustration_decay)
 
