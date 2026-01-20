@@ -9,7 +9,7 @@ class PredictiveSystem:
     Handles forward model prediction and Hebbian learning.
     """
 
-    def __init__(self):
+    def __init__(self, ltm_sequences):
         # Predictive matrices for each feature type
         self.predictors = {
             "brightness": PredictiveMatrix(
@@ -17,6 +17,8 @@ class PredictiveSystem:
                 action_dim=5,  # [forward, backward, left, right, do_nothing]
             )
         }
+
+        self.ltm_sequences = ltm_sequences
 
         # Later you can add:
         # 'edges': PredictiveMatrix(feature_dim=64, action_dim=5),

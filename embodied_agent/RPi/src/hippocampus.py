@@ -3,11 +3,20 @@ import threading
 import time
 
 RHYTHMS = {
+    "gamma": BrainRhythm(0),  # Hz
+    "beta": BrainRhythm(0),  # Hz
+    "alpha": BrainRhythm(0),  # Hz
     "theta": BrainRhythm(0),  # Hz
     "delta": BrainRhythm(0),  # Hz
 }
 
-BRAIN_STATE = {"gamma": 0.0, "theta": 0.0, "delta": 0.0}
+BRAIN_STATE = {
+    "gamma": 0.0,
+    "beta": 0.0,
+    "alpha": 0.0,
+    "theta": 0.0,
+    "delta": 0.0,
+}
 
 
 def update_brain_state_loop():
@@ -34,22 +43,34 @@ class Hippocampus:
         self.stm_buffers = {"brightness": []}
         self.max_buffer_size = 20
 
+        self.ltm_sequences = []
+
+        self._gamma_processed = True
+        self._beta_processed = True
+        self._alpha_processed = True
         self._theta_processed = True
         self._delta_processed = True
+
+        RHYTHMS["gamma"].start(40)
+        RHYTHMS["beta"].start(13)
+        RHYTHMS["alpha"].start(8)
         RHYTHMS["theta"].start(4)
         RHYTHMS["delta"].start(1)
 
         start_global_rhythms()
 
     def life(self, features, action):
+        self._gamma_life()
+        self._beta_life()
+        self._alpha_life()
         self._theta_life(features, action)
         self._delta_life()
 
-    def _theta_life(self, features, action):
-        theta_val = BRAIN_STATE["theta"]
-        if theta_val > 0.95 and not self._theta_processed:
-            self._theta_processed = True
-            print("Processing theta frame")
+    def _gamma_life(self, features, action):
+        gamma_val = BRAIN_STATE["gamma"]
+        if gamma_val > 0.95 and not self._gamma_processed:
+            self._gamma_processed = True
+            print("🔴 γ - gamma processing")
 
             for feature_name, feature_vec in features.items():
                 if feature_name in self.stm_buffers:
@@ -58,28 +79,72 @@ class Hippocampus:
                         {
                             "type": "feature",
                             "data": feature_vec.copy(),
-                            "theta": theta_val,
+                            "gamma": gamma_val,
                         }
                     )
 
                     buffer.append(
-                        {"type": "action", "data": action.copy(), "theta": theta_val}
+                        {"type": "action", "data": action.copy(), "gamma": gamma_val}
                     )
 
                     # Trim buffer if too large
                     if len(buffer) > self.max_buffer_size:
                         buffer.pop(0)
 
+        elif gamma_val < 0:
+            self._gamma_processed = False
+
+    def _beta_life(self, features, action):
+        beta_val = BRAIN_STATE["beta"]
+        if beta_val > 0.95 and not self._beta_processed:
+            self._beta_processed = True
+            print("🟠 β - beta processing")
+        elif beta_val < 0:
+            self._beta_processed = False
+
+    def _alpha_life(self, features, action):
+        alpha_val = BRAIN_STATE["alpha"]
+        if alpha_val > 0.95 and not self._alpha_processed:
+            self._alpha_processed = True
+            print("🟡 α - alpha processing")
+        elif alpha_val < 0:
+            self._alpha_processed = False
+
+    def _theta_life(self, features, action):
+        theta_val = BRAIN_STATE["theta"]
+        if theta_val > 0.95 and not self._theta_processed:
+            self._theta_processed = True
+            print("🟢 θ - theta processing")
+
+            # for feature_name, feature_vec in features.items():
+            #     if feature_name in self.stm_buffers:
+            #         buffer = self.stm_buffers[feature_name]
+            #         buffer.append(
+            #             {
+            #                 "type": "feature",
+            #                 "data": feature_vec.copy(),
+            #                 "theta": theta_val,
+            #             }
+            #         )
+
+            #         buffer.append(
+            #             {"type": "action", "data": action.copy(), "theta": theta_val}
+            #         )
+
+            #         # Trim buffer if too large
+            #         if len(buffer) > self.max_buffer_size:
+            #             buffer.pop(0)
+
         elif theta_val < 0:
             self._theta_processed = False
 
         return theta_val
 
-    def _delta_life(self):
+    def _delta_life(self, features, action):
         val = BRAIN_STATE["delta"]
         if val > 0.95 and not self._delta_processed:
             self._delta_processed = True
-            print("Processing delta frame")
+            print("🟣 δ - delta processing")
         elif val < 0:
             self._delta_processed = False
 
@@ -137,7 +202,6 @@ class Hippocampus:
 
 # DOC
 """
-
 🔵 Delta (δ)
 Zakres: ~0,5–4 Hz
 Najczęściej odpowiadają za:

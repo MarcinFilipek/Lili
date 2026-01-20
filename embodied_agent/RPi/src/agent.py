@@ -14,7 +14,7 @@ class Agent:
         self.motor_cortex = MotorCortex()
         self.vision_cortex = VisionCortex()
         self.hippocampus = Hippocampus()
-        self.predictive_system = PredictiveSystem()
+        self.predictive_system = PredictiveSystem(self.hippocampus.ltm_sequences)
 
         self.previous_features = None
 
@@ -22,6 +22,7 @@ class Agent:
         while True:
             frame = self.eye.capture(gray=True, blur=True)
             features = self.vision_cortex.extract_features(frame)
+            print("New features")
 
             if self.previous_features is not None:
                 predictions = self.predictive_system.predict(
