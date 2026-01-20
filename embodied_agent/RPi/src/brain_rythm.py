@@ -25,7 +25,6 @@ class BrainRhythm:
         self.current_freq = freq
         self.phase = 0
         self.value = 0
-        self._started = False
 
     def start(self, freq):
         """
@@ -36,11 +35,12 @@ class BrainRhythm:
         """
         self.target_freq = freq
         self.current_freq = freq
-        self._started = True
+        self.phase = 0
+        self.value = 0
 
     def is_started(self):
         """Check if rhythm is active"""
-        return self._started
+        return self.target_freq > 0
 
     def update(self):
         """
@@ -49,7 +49,7 @@ class BrainRhythm:
         Should be called at high frequency (e.g., 1000 Hz / 1ms intervals)
         to maintain smooth oscillation
         """
-        if self._started:
+        if self.target_freq > 0:
             dt = 0.001  # 1ms time step
             self.phase += 2 * np.pi * self.current_freq * dt
             self.phase = self.phase % (2 * np.pi)
