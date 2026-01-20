@@ -18,10 +18,10 @@ class Hippocampus:
         self.brain_state = brain_state
 
         self.rhythms["gamma"].start(40)
-        self.rhythms["beta"].start(13)
-        self.rhythms["alpha"].start(8)
+        # self.rhythms["beta"].start(13)
+        # self.rhythms["alpha"].start(8)
         self.rhythms["theta"].start(4)
-        self.rhythms["delta"].start(1)
+        # self.rhythms["delta"].start(1)
 
     def life(self, features, action):
         self._gamma_life(features, action)

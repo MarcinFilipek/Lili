@@ -83,8 +83,6 @@ class Agent:
                 predictions, features
             )
 
-            print(f"    ⚠️ Error={error:.3f}, frustration={self.frustration:.2f}")
-
             if error > self.error_threshold and RHYTHMS["gamma"].is_started():
                 self.frustration += error  # rośnie proporcjonalnie do błędu
             else:
@@ -110,12 +108,14 @@ class Agent:
             self.previous_features = features
 
             if self.frustration > self.frustration_threshold:
+                print(f"    ⚠️ Error={error:.3f}, frustration={self.frustration:.2f}")
                 self.hippocampus.go_sleep()
                 continue
 
             if not RHYTHMS["gamma"].is_started() and error < self.error_threshold:
                 self.hippocampus.wake_up()
                 self.frustration = 0.0
+                print(f"    ⚠️ Error={error:.3f}, frustration={self.frustration:.2f}")
 
             # cv2.imshow("Frame", frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
