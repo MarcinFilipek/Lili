@@ -101,7 +101,7 @@ class Agent:
                 self._theta_processed = True
                 seq = self.hippocampus.extract_sequences()
                 if len(seq) > 0:
-                    self.predictive_system.consolidate(seq, learning_rate=0.05)
+                    self.predictive_system.consolidate(seq, learning_rate=0.01)
             elif val < 0:
                 self._theta_processed = False
 
