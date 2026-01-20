@@ -51,7 +51,9 @@ class Agent:
         self.brain_state = BrainState()
         self.motor_cortex = MotorCortex()
         self.vision_cortex = VisionCortex()
-        self.hippocampus = Hippocampus(rhythms=RHYTHMS, brain_state=BRAIN_STATE)
+        self.hippocampus = Hippocampus(
+            rhythms=self.brain_state.rhythms, brain_state=self.brain_state.state
+        )
         self.predictive_system = PredictiveSystem()
 
         self.frustration = 0.0
