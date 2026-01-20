@@ -16,6 +16,7 @@ class Agent:
         self.hippocampus = Hippocampus()
         self.predictive_system = PredictiveSystem(self.hippocampus.ltm_sequences)
 
+        self.sleep_threshold = 0.1
         self.previous_features = None
 
     def life(self):
@@ -40,7 +41,24 @@ class Agent:
 
             self.motor_cortex.execute(action)
 
+            """
+            if delta > 0.9:
+                sequences = self.hippocampus.get_recent_sequences(n=5)
+                total_seqs = sum(len(s) for s in sequences.values())
+                
+                if total_seqs > 0:
+                    # Gentle online learning
+                    self.predictive_system.consolidate(
+                    sequences, 
+                    learning_rate=self.delta_lr_awake
+                )
+            """
+
             self.previous_features = features
+
+            if error > self.sleep_threshold:
+                self.hippocampus.go_sleep()
+                return
 
             # cv2.imshow("Frame", frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
