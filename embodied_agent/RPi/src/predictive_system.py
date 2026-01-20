@@ -73,7 +73,7 @@ class PredictiveSystem:
 
         return avg_error, error_breakdown
 
-    def consolidate(self, sequences_by_feature):
+    def consolidate(self, sequences_by_feature, learning_rate):
         """
         Learn from sequences during sleep.
         Updates weights using Hebbian learning.
@@ -92,7 +92,7 @@ class PredictiveSystem:
             if feature_name in self.predictors:
                 # Update this predictor with its sequences
                 avg_error = self.predictors[feature_name].update(
-                    sequences, learning_rate=0.01
+                    sequences, learning_rate
                 )
 
                 print(f"    {feature_name}: error={avg_error:.4f}")
