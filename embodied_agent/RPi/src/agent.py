@@ -114,6 +114,7 @@ class Agent:
 
             if not RHYTHMS["gamma"].is_started() and error < self.error_threshold:
                 self.hippocampus.wake_up()
+                self.frustration = 0.0
 
             # cv2.imshow("Frame", frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
