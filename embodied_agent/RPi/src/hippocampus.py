@@ -62,8 +62,6 @@ class Hippocampus:
         self.rhythms["theta"].start(4)
         self.rhythms["delta"].start(1)
 
-        start_global_rhythms()
-
     def life(self, features, action):
         self._gamma_life(features, action)
         self._beta_life(features, action)
