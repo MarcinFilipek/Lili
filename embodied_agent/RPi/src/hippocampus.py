@@ -1,3 +1,4 @@
+import numpy as np
 from brain_rythm import BrainRhythm
 import threading
 import time
