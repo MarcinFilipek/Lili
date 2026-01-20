@@ -97,7 +97,7 @@ class Agent:
 
             self.motor_cortex.execute(action)
 
-            val = self.theta_state
+            val = self.brain_state.rhythms["theta"].value
             if val > 0.95 and not self._theta_processed:
                 print("🟣 θ - theta processing")
                 self._theta_processed = True
