@@ -65,7 +65,7 @@ class Agent:
         self._theta_processed = True
 
         self.gamma_rhythm = self.brain_state.rhythms["gamma"]
-        self.theta_state = self.brain_state.state["theta"]
+        self.theta_rhythm = self.brain_state.rhythms["theta"]
         self.brain_state.start()
 
     def life(self):
@@ -97,7 +97,7 @@ class Agent:
 
             self.motor_cortex.execute(action)
 
-            val = self.brain_state.rhythms["theta"].value
+            val = self.theta_rhythm.value
             if val > 0.95 and not self._theta_processed:
                 print("🟣 θ - theta processing")
                 self._theta_processed = True
@@ -109,7 +109,6 @@ class Agent:
                 self._theta_processed = False
 
             self.previous_features = features
-            print(f"    ⚠️ Error={error:.3f}, frustration={self.frustration:.2f}")
 
             if self.frustration > self.frustration_threshold:
                 print(f"    ⚠️ Error={error:.3f}, frustration={self.frustration:.2f}")
