@@ -61,7 +61,7 @@ class Agent:
 
             if error > self.sleep_threshold:
                 self.hippocampus.go_sleep()
-                return
+                continue
 
             # cv2.imshow("Frame", frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
