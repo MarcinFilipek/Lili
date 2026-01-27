@@ -1,10 +1,36 @@
 extern "C"
 {
 #include "stm32f0xx_hal.h"
+#include "pca9685.h"
 }
 
 TIM_HandleTypeDef htim3;
 SPI_HandleTypeDef hspi1;
+I2C_HandleTypeDef hi2c1;
+
+ServoConfig_t servoSG5010, servo1201MG;
+
+// HAL I2C MSP Init callback - wymagane przez HAL
+extern "C" void HAL_I2C_MspInit(I2C_HandleTypeDef *hi2c)
+{
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    if (hi2c->Instance == I2C1)
+    {
+        // Włącz zegar dla I2C1 i GPIOF
+        __HAL_RCC_I2C1_CLK_ENABLE();
+        __HAL_RCC_GPIOF_CLK_ENABLE();
+
+        // PF0 -> I2C1_SDA (AF0) - CN3 pin 5 (A2)
+        // PF1 -> I2C1_SCL (AF0) - CN3 pin 9 (A5)
+        GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1;
+        GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+        GPIO_InitStruct.Pull = GPIO_NOPULL; // Zewnętrzne pull-up na module
+        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+        GPIO_InitStruct.Alternate = GPIO_AF1_I2C1;
+        HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+    }
+}
 
 // Bufory dla komunikacji SPI
 #define SPI_BUFFER_SIZE 64
@@ -104,6 +130,31 @@ void PWM_Init(void)
     // Start PWM na obu kanałach
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+}
+
+void I2C_Init(void)
+{
+    // Konfiguracja I2C1 - GPIO będzie skonfigurowane w HAL_I2C_MspInit
+    hi2c1.Instance = I2C1;
+    hi2c1.Init.Timing = 0x2000090E; // Standard timing dla 100kHz @ 48MHz
+    hi2c1.Init.OwnAddress1 = 0;
+    hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+    hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+    hi2c1.Init.OwnAddress2 = 0;
+    hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+    hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+    hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+
+    if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+    {
+        // Błąd inicjalizacji - zatrzymaj się
+        while (1)
+            ;
+    }
+
+    // Wyłącz filtry - mogą powodować problemy
+    HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_DISABLE);
+    HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0);
 }
 
 void SPI_Init(void)
@@ -220,8 +271,39 @@ int main()
     HAL_Init();
     SystemClock_Config();
 
+    servoSG5010 = {0, 500, 2500}; // Kanał 0
+    servo1201MG = {1, 500, 2500}; // Kanał 1
+
     // Inicjalizacja PWM
     PWM_Init();
+
+    // Inicjalizacja I2C dla PCA9685
+    I2C_Init();
+
+    // Sprawdź czy PCA9685 odpowiada
+    HAL_Delay(100); // Daj czas na stabilizację zasilania
+
+    HAL_StatusTypeDef status = HAL_I2C_IsDeviceReady(&hi2c1, 0x40 << 1, 3, 100);
+    if (status != HAL_OK)
+    {
+        // PCA9685 nie odpowiada - migaj szybko LED
+        while (1)
+        {
+            __HAL_RCC_GPIOB_CLK_ENABLE();
+            GPIO_InitTypeDef GPIO_InitStruct = {0};
+            GPIO_InitStruct.Pin = GPIO_PIN_3;
+            GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+            GPIO_InitStruct.Pull = GPIO_NOPULL;
+            GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+            HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+            HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
+            HAL_Delay(100); // Szybkie miganie = błąd I2C
+        }
+    }
+
+    // Inicjalizacja sterownika PCA9685
+    PCA9685_Init(&hi2c1);
 
     // Inicjalizacja SPI do komunikacji z Raspberry Pi 5
     SPI_Init();
@@ -239,10 +321,43 @@ int main()
     PWM_SetDutyCycle_CH1(50); // 50% na kanale 1 (PB4)
     PWM_SetDutyCycle_CH2(75); // 75% na kanale 2 (PB5)
 
+    // Przykład sterowania serwem na kanale 0 PCA9685
+    // Ustaw początkową pozycję serwa na 90 stopni
+    PCA9685_SetServoAngle(&hi2c1, &servoSG5010, 90);
+    PCA9685_SetServoAngle(&hi2c1, &servo1201MG, 90);
+
+    uint8_t servo_angle = 90;
+    uint8_t direction = 1; // 1 = wzrost, 0 = spadek
+
     while (1)
     {
         HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
-        HAL_Delay(300);
+        HAL_Delay(25);
+
+        // Przykładowa animacja serwa - ruch od 0 do 180 stopni
+        if (direction)
+        {
+            servo_angle += 1;
+            if (servo_angle >= 180)
+            {
+                servo_angle = 180;
+                direction = 0;
+            }
+        }
+        else
+        {
+            if (servo_angle >= 1)
+                servo_angle -= 1;
+            else
+                servo_angle = 0;
+
+            if (servo_angle == 0)
+            {
+                direction = 1;
+            }
+        }
+        PCA9685_SetServoAngle(&hi2c1, &servoSG5010, servo_angle);
+        PCA9685_SetServoAngle(&hi2c1, &servo1201MG, servo_angle);
 
         // Obsługa danych odebranych przez SPI
         if (spi_data_ready)
@@ -265,6 +380,10 @@ int main()
             {
                 // Ustaw PWM na podstawie cyfry (0-9 -> 0%-90%)
                 PWM_SetDutyCycle_CH1((received - '0') * 10);
+
+                // Dodatkowo można sterować serwem cyfra -> kąt
+                PCA9685_SetServoAngle(&hi2c1, &servoSG5010, (received - '0') * 20);
+                PCA9685_SetServoAngle(&hi2c1, &servo1201MG, (received - '0') * 20);
             }
 
             // Możesz odesłać odpowiedź do RPi
