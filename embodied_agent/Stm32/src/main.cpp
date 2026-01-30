@@ -27,11 +27,11 @@ void ProcessSPIFrame(SPI_Frame_t *frame)
         // Ustaw kąt serwa
         uint8_t angle = frame->data;
 
-        if (frame->channel == 0)
+        if (frame->channel == 1)
         {
             Servo_SetAngleWithConfig(&hi2c1, &servoSG5010, angle);
         }
-        else if (frame->channel == 1)
+        else if (frame->channel == 0)
         {
             Servo_SetAngleWithConfig(&hi2c1, &servo1201MG, angle);
         }
@@ -133,8 +133,8 @@ int main()
     PCA9685_Init(&hi2c1);
 
     // Inicjalizacja serwomechanizmów
-    Servo_Init(&hi2c1, &servoSG5010, 90);
-    Servo_Init(&hi2c1, &servo1201MG, 90);
+    Servo_Init(&hi2c1, &servoSG5010, 180);
+    Servo_Init(&hi2c1, &servo1201MG, 180);
 
     // Inicjalizacja SPI
     SPI_Init();
@@ -144,7 +144,7 @@ int main()
     PWM_SetDutyCycle_CH2(75); // 75% na kanale 2 (PB5)
 
     // Uruchom animację serw
-    Servo_StartSweep(&servoAnimation, 180, 0, 1);
+    // Servo_StartSweep(&servoAnimation, 180, 0, 1);
 
     // Główna pętla aplikacji
     while (1)
@@ -154,12 +154,12 @@ int main()
         HAL_Delay(25);
 
         // Aktualizacja animacji serw (można wyłączyć przez SPI)
-        if (servoAnimation.active)
-        {
-            uint8_t servo_angle = Servo_UpdateSweep(&servoAnimation);
-            Servo_SetAngleWithConfig(&hi2c1, &servoSG5010, servo_angle);
-            Servo_SetAngleWithConfig(&hi2c1, &servo1201MG, servo_angle);
-        }
+        // if (servoAnimation.active)
+        // {
+        //     uint8_t servo_angle = Servo_UpdateSweep(&servoAnimation);
+        //     Servo_SetAngleWithConfig(&hi2c1, &servoSG5010, servo_angle);
+        //     Servo_SetAngleWithConfig(&hi2c1, &servo1201MG, servo_angle);
+        // }
 
         // Obsługa ramek SPI
         if (frame_ready)
