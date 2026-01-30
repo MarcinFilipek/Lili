@@ -108,11 +108,11 @@ int main()
     SystemClock_Config();
 
     // Konfiguracja serwomechanizmów
-    servoSG5010.channel = 0;
-    servoSG5010.min_us = 500;
-    servoSG5010.max_us = 2300;
+    servoSG5010.channel = 1;
+    servoSG5010.min_us = 1000; // 500us
+    servoSG5010.max_us = 1600; // 2300us
 
-    servo1201MG.channel = 1;
+    servo1201MG.channel = 0;
     servo1201MG.min_us = 500;
     servo1201MG.max_us = 2500;
 
