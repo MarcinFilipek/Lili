@@ -90,7 +90,7 @@ class SPIConnection:
         response = self.send(request)
 
         # Read response frame
-        # response = self._receive(5)
+        response = self._receive(500)
         print(f"Response: {response}")
 
         # Validate response
