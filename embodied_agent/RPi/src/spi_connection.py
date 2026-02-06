@@ -48,7 +48,7 @@ class SPIConnection:
             self.CMD_GET_POSITION,
             channel,
             0x00,
-            self._compute_checksum(
+            self._calculate_checksum(
                 self.START_BYTE, self.CMD_GET_POSITION, channel, 0x00
             ),
         ]
@@ -66,7 +66,7 @@ class SPIConnection:
             raise Exception(f"Channel mismatch: expected {channel}, got {response[2]}")
 
         # Verify checksum
-        expected_checksum = self._compute_checksum(
+        expected_checksum = self._calculate_checksum(
             response[0], response[1], response[2], response[3]
         )
         if response[4] != expected_checksum:
