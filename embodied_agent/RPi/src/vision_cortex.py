@@ -33,7 +33,7 @@ class VisionCortex:
 
         return brightness.flatten()
 
-    def _extract_corners(gray_frame):
+    def _extract_corners(self, gray_frame):
         """
         Extract corners in 6×6 grid using Harris corner detector.
 
