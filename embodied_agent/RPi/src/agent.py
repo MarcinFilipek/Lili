@@ -49,6 +49,8 @@ class Agent:
             )
 
             print(f"Error: {error:.3f}, Error breakdown: {error_breakdown}")
+            print(f"Rytm gamma: {self.gamma_rhythm.value}")
+            print(f"Rytm theta: {self.theta_rhythm.value}")
 
             if error > self.error_threshold and self.gamma_rhythm.is_started():
                 self.frustration += error  # rośnie proporcjonalnie do błędu
