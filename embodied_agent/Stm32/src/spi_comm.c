@@ -1,15 +1,16 @@
 #include "spi_comm.h"
+#include <string.h>
 
 SPI_HandleTypeDef hspi1;
-volatile uint8_t spi_rx_buffer[SPI_BUFFER_SIZE];
-volatile uint8_t spi_tx_buffer[SPI_BUFFER_SIZE];
-volatile uint8_t spi_rx_index = 0;
-volatile uint8_t spi_data_ready = 0;
+
+// Bufory dla full-duplex SPI
+volatile uint8_t spi_rx_frame[5] = {0};
+volatile uint8_t spi_tx_frame[5] = {0xAA, 0x00, 0x00, 0x00, 0x00}; // Domyślna odpowiedź
 
 // Parser ramek
 SPI_Frame_t current_frame;
-SPI_ParserState parser_state = SPI_STATE_IDLE;
 volatile uint8_t frame_ready = 0;
+volatile uint8_t response_pending = 0;
 
 void SPI_Init(void)
 {
@@ -53,19 +54,11 @@ void SPI_Init(void)
     HAL_NVIC_SetPriority(SPI1_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(SPI1_IRQn);
 
-    // Wyczyść bufory
-    for (int i = 0; i < SPI_BUFFER_SIZE; i++)
-    {
-        spi_rx_buffer[i] = 0;
-        spi_tx_buffer[i] = 0;
-    }
-
-    // Reset parsera
-    parser_state = SPI_STATE_IDLE;
-    frame_ready = 0;
-
-    // Rozpocznij odbiór w trybie przerwań
-    HAL_SPI_Receive_IT(&hspi1, (uint8_t *)&spi_rx_buffer[0], 1);
+    // Rozpocznij ciągłą komunikację full-duplex (5 bajtów)
+    HAL_SPI_TransmitReceive_IT(&hspi1, 
+                               (uint8_t*)spi_tx_frame, 
+                               (uint8_t*)spi_rx_frame, 
+                               5);
 }
 
 uint8_t SPI_CalculateChecksum(SPI_Frame_t *frame)
@@ -82,102 +75,54 @@ uint8_t SPI_IsFrameValid(SPI_Frame_t *frame)
     return (calculated == frame->checksum);
 }
 
-void SPI_ProcessByte(uint8_t byte)
-{
-    switch (parser_state)
-    {
-        case SPI_STATE_IDLE:
-            if (byte == SPI_FRAME_START_BYTE)
-            {
-                current_frame.start_byte = byte;
-                parser_state = SPI_STATE_WAIT_CMD;
-            }
-            break;
-            
-        case SPI_STATE_WAIT_CMD:
-            current_frame.cmd_type = byte;
-            parser_state = SPI_STATE_WAIT_CHANNEL;
-            break;
-            
-        case SPI_STATE_WAIT_CHANNEL:
-            current_frame.channel = byte;
-            parser_state = SPI_STATE_WAIT_DATA;
-            break;
-            
-        case SPI_STATE_WAIT_DATA:
-            current_frame.data = byte;
-            parser_state = SPI_STATE_WAIT_CHECKSUM;
-            break;
-            
-        case SPI_STATE_WAIT_CHECKSUM:
-            current_frame.checksum = byte;
-            parser_state = SPI_STATE_IDLE;
-            
-            // Sprawdź poprawność ramki
-            if (SPI_IsFrameValid(&current_frame))
-            {
-                frame_ready = 1;
-            }
-            break;
-            
-        default:
-            parser_state = SPI_STATE_IDLE;
-            break;
-    }
-}
-
-void SPI_SendFrame(SPI_Frame_t *frame)
+void SPI_PrepareResponse(SPI_Frame_t *frame)
 {
     frame->start_byte = SPI_FRAME_START_BYTE;
     frame->checksum = SPI_CalculateChecksum(frame);
     
-    uint8_t buffer[5];
-    buffer[0] = frame->start_byte;
-    buffer[1] = frame->cmd_type;
-    buffer[2] = frame->channel;
-    buffer[3] = frame->data;
-    buffer[4] = frame->checksum;
+    // Skopiuj do bufora TX
+    spi_tx_frame[0] = frame->start_byte;
+    spi_tx_frame[1] = frame->cmd_type;
+    spi_tx_frame[2] = frame->channel;
+    spi_tx_frame[3] = frame->data;
+    spi_tx_frame[4] = frame->checksum;
     
-    HAL_SPI_Transmit(&hspi1, buffer, 5, 100);
+    response_pending = 1;
 }
 
-void SPI_SendData(uint8_t *data, uint16_t size)
-{
-    HAL_SPI_Transmit(&hspi1, data, size, 100);
-}
-
-uint8_t SPI_GetLastReceivedByte(void)
-{
-    return spi_rx_buffer[spi_rx_index > 0 ? spi_rx_index - 1 : SPI_BUFFER_SIZE - 1];
-}
-
-// Callback wywoływany po odebraniu danych przez SPI
-void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
+// Callback wywoływany po zakończeniu TransmitReceive
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
     if (hspi->Instance == SPI1)
     {
-        uint8_t received = spi_rx_buffer[spi_rx_index];
+        // Skopiuj odebraną ramkę
+        memcpy((void*)&current_frame, (void*)spi_rx_frame, 5);
         
-        // Przetwórz bajt przez parser ramek
-        SPI_ProcessByte(received);
-        
-        spi_rx_index++;
-        if (spi_rx_index >= SPI_BUFFER_SIZE)
+        // Sprawdź poprawność ramki
+        if (SPI_IsFrameValid(&current_frame))
         {
-            spi_rx_index = 0;
+            frame_ready = 1;  // Sygnalizuj main loop
         }
         
-        // Kontynuuj odbiór kolejnego bajtu
-        HAL_SPI_Receive_IT(&hspi1, (uint8_t *)&spi_rx_buffer[spi_rx_index], 1);
-    }
-}
-
-// Callback wywoływany po wysłaniu danych przez SPI
-void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
-{
-    if (hspi->Instance == SPI1)
-    {
-        // Transmisja zakończona
+        // Jeśli nie ma nowej odpowiedzi, wyślij dummy frame
+        if (!response_pending)
+        {
+            spi_tx_frame[0] = 0xAA;
+            spi_tx_frame[1] = 0x00;
+            spi_tx_frame[2] = 0x00;
+            spi_tx_frame[3] = 0x00;
+            spi_tx_frame[4] = 0x00;
+        }
+        else
+        {
+            response_pending = 0;
+        }
+        
+        // Restart komunikacji - kolejne 5 bajtów
+        HAL_SPI_TransmitReceive_IT(&hspi1, 
+                                   (uint8_t*)spi_tx_frame, 
+                                   (uint8_t*)spi_rx_frame, 
+                                   5);
     }
 }
 

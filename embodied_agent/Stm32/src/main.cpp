@@ -39,7 +39,7 @@ void ProcessSPIFrame(SPI_Frame_t *frame)
         // Wyślij potwierdzenie
         response.cmd_type = SPI_CMD_ACK;
         response.data = angle;
-        SPI_SendFrame(&response);
+        SPI_PrepareResponse(&response);
         break;
     }
 
@@ -50,7 +50,7 @@ void ProcessSPIFrame(SPI_Frame_t *frame)
 
         response.cmd_type = SPI_CMD_ACK;
         response.data = current_angle;
-        SPI_SendFrame(&response);
+        SPI_PrepareResponse(&response);
         break;
     }
 
@@ -66,7 +66,7 @@ void ProcessSPIFrame(SPI_Frame_t *frame)
 
         response.cmd_type = SPI_CMD_ACK;
         response.data = duty;
-        SPI_SendFrame(&response);
+        SPI_PrepareResponse(&response);
         break;
     }
 
@@ -75,7 +75,7 @@ void ProcessSPIFrame(SPI_Frame_t *frame)
         // Test połączenia
         response.cmd_type = SPI_CMD_ACK;
         response.data = 0x55; // Signature
-        SPI_SendFrame(&response);
+        SPI_PrepareResponse(&response);
         break;
     }
 
@@ -86,7 +86,7 @@ void ProcessSPIFrame(SPI_Frame_t *frame)
 
         response.cmd_type = SPI_CMD_ACK;
         response.data = 0x00;
-        SPI_SendFrame(&response);
+        SPI_PrepareResponse(&response);
         break;
     }
 
@@ -95,7 +95,7 @@ void ProcessSPIFrame(SPI_Frame_t *frame)
         // Nieznana komenda
         response.cmd_type = SPI_CMD_NACK;
         response.data = 0xFF;
-        SPI_SendFrame(&response);
+        SPI_PrepareResponse(&response);
         break;
     }
     }
