@@ -43,13 +43,13 @@ class SPIConnection:
             print(f"Error receiving data: {e}")
             return [0x00] * num_bytes
 
-    def send_frame(self, cmd_type, channel, data):
-        start_byte = self.START_BYTE
-        checksum = self._calculate_checksum(start_byte, cmd_type, channel, data)
-        frame = [start_byte, cmd_type, channel, data, checksum]
-        response = self.send(frame)
-        time.sleep(0.05)
-        return response
+    # def send_frame(self, cmd_type, channel, data):
+    #     start_byte = self.START_BYTE
+    #     checksum = self._calculate_checksum(start_byte, cmd_type, channel, data)
+    #     frame = [start_byte, cmd_type, channel, data, checksum]
+    #     response = self.send(frame)
+    #     time.sleep(0.05)
+    #     return response
 
     def read_servo_position(self, channel):
         """
@@ -72,7 +72,7 @@ class SPIConnection:
             ),
         ]
 
-        self.send_frame(request)
+        self.send(request)
 
         # Read response frame
         response = self._receive(5)
