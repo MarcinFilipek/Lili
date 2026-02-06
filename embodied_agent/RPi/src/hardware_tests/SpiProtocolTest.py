@@ -21,8 +21,9 @@ def send_frame(cmd_type, channel, data):
 
 
 # Ustaw servo 0,1 na 90 stopni
-send_frame(0x01, 0, 90)
-send_frame(0x01, 1, 90)
+response_from_set = send_frame(0x01, 0, 90)
+print(response_from_set)
+# send_frame(0x01, 1, 90)
 
 # Odczytaj pozycję servo 0
 response = send_frame(0x02, 1, 0x00)
