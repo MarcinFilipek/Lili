@@ -34,7 +34,6 @@ class SPIConnection:
     def send(self, data):
         try:
             response = self.spi.xfer2(data)
-            # time.sleep(0.05)
             return response
         except Exception as e:
             print(f"Error sending data: {e}")
@@ -76,7 +75,7 @@ class SPIConnection:
         Returns:
             position: float in [-1, 1]
         """
-        # Send request frame
+        # Prepare request frame
         request = [
             self.START_BYTE,
             self.CMD_GET_POSITION,
@@ -87,15 +86,41 @@ class SPIConnection:
             ),
         ]
 
-        response = self.send(request)
+        # Phase 1: Send request (STM32 receives command, sends old buffer)
+        try:
+            self.spi.xfer2(request)
+        except Exception as e:
+            print(f"Error sending request: {e}")
+            raise
 
-        # Read response frame
-        response = self._receive(500)
-        print(f"Response: {response}")
+        # Wait for STM32 to process
+        time.sleep(0.02)  # 1ms
+
+        # Phase 2: Send dummy bytes (STM32 loads response into TX buffer)
+        dummy = [0x00] * 5
+        try:
+            self.spi.xfer2(dummy)
+        except Exception as e:
+            print(f"Error in phase 2: {e}")
+            raise
+
+        # Small delay
+        time.sleep(0.02)  # 1ms
+
+        # Phase 3: Send dummy bytes AGAIN (NOW we get the real response!)
+        try:
+            response = self.spi.xfer2(dummy)
+        except Exception as e:
+            print(f"Error receiving response: {e}")
+            raise
+
+        print(f"Response: {[hex(b) for b in response]}")
 
         # Validate response
         if response[0] != self.START_BYTE:
-            raise Exception(f"Invalid start byte: {response[0]:#x}")
+            raise Exception(
+                f"Invalid start byte: {response[0]:#x} (expected {self.START_BYTE:#x})"
+            )
 
         if response[2] != channel:
             raise Exception(f"Channel mismatch: expected {channel}, got {response[2]}")
@@ -105,7 +130,9 @@ class SPIConnection:
             response[0], response[1], response[2], response[3]
         )
         if response[4] != expected_checksum:
-            raise Exception(f"Checksum mismatch")
+            raise Exception(
+                f"Checksum mismatch: got {response[4]:#x}, expected {expected_checksum:#x}"
+            )
 
         # Extract position data
         data_byte = response[3]
