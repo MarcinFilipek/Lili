@@ -8,6 +8,7 @@ class MotorCortex:
         self.action = np.array([0, 0, 0, 0, 1])
 
         self.actual_position = np.array([0.0, 0.0])
+        self.target_position = np.array([0.0, 0.0])
 
         self.CHANNEL_HEAD = 0
         self.CHANNEL_EYE = 1
