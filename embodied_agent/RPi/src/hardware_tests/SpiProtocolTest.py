@@ -6,8 +6,10 @@ spi.open(0, 0)
 spi.mode = 0
 spi.max_speed_hz = 500000
 
+
 def calculate_checksum(start, cmd, channel, data):
     return start ^ cmd ^ channel ^ data
+
 
 def send_frame(cmd_type, channel, data):
     start_byte = 0xAA
@@ -17,12 +19,14 @@ def send_frame(cmd_type, channel, data):
     time.sleep(0.05)
     return response
 
+
 # Ustaw servo 0,1 na 90 stopni
 send_frame(0x01, 0, 90)
 send_frame(0x01, 1, 90)
 
 # Odczytaj pozycję servo 0
 response = send_frame(0x02, 1, 0x00)
+print(response)
 
 # Test połączenia
 send_frame(0x05, 1, 0x00)
