@@ -114,8 +114,6 @@ class SPIConnection:
             print(f"Error receiving response: {e}")
             raise
 
-        print(f"Response: {[hex(b) for b in response]}")
-
         # Validate response
         if response[0] != self.START_BYTE:
             raise Exception(
