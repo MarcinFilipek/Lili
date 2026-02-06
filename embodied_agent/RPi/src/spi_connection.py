@@ -15,8 +15,65 @@ class SPIConnection:
         except Exception as e:
             print(f"Error initializing SPI: {e}")
 
+    def _calculate_checksum(self, start, cmd, channel, data):
+        return start ^ cmd ^ channel ^ data
+
     def send(self, data):
         try:
             self.spi.xfer2(data)
         except Exception as e:
             print(f"Error sending data: {e}")
+
+    def send_frame(self, cmd_type, channel, data):
+        start_byte = self.START_BYTE
+        checksum = self._calculate_checksum(start_byte, cmd_type, channel, data)
+        frame = [start_byte, cmd_type, channel, data, checksum]
+        response = self.send(frame)
+        time.sleep(0.05)
+        return response
+
+    def read_servo_position(self, channel):
+        """
+        Request and read servo position from STM32.
+
+        Args:
+            channel: 0 (head) or 1 (eye)
+
+        Returns:
+            position: float in [-1, 1]
+        """
+        # Send request frame
+        request = [
+            self.START_BYTE,
+            self.CMD_GET_POSITION,
+            channel,
+            0x00,
+            self._compute_checksum(
+                self.START_BYTE, self.CMD_GET_POSITION, channel, 0x00
+            ),
+        ]
+
+        self.spi.send_frame(request)
+
+        # Read response frame
+        response = self.spi.receive(5)
+
+        # Validate response
+        if response[0] != self.START_BYTE:
+            raise Exception(f"Invalid start byte: {response[0]:#x}")
+
+        if response[2] != channel:
+            raise Exception(f"Channel mismatch: expected {channel}, got {response[2]}")
+
+        # Verify checksum
+        expected_checksum = self._compute_checksum(
+            response[0], response[1], response[2], response[3]
+        )
+        if response[4] != expected_checksum:
+            raise Exception(f"Checksum mismatch")
+
+        # Extract position data
+        data_byte = response[3]
+        position = self._map_from_byte(data_byte)
+
+        return position
