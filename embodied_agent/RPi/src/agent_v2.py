@@ -25,7 +25,7 @@ class AgentV2:
             features = self.vision_cortex.extract_features(frame)
 
             self.hippocampus.life(features, self.motor_cortex.action)
-            print(f"Hipocampus: {len(self.hippocampus.stm_buffers}")
+            print(f"Hipocampus: {len(self.hippocampus.stm_buffers)} ")
 
 
 def main():
