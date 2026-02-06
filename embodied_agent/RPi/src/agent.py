@@ -48,6 +48,8 @@ class Agent:
                 predictions, features
             )
 
+            print(f"Error: {error:.3f}, Error breakdown: {error_breakdown}")
+
             if error > self.error_threshold and self.gamma_rhythm.is_started():
                 self.frustration += error  # rośnie proporcjonalnie do błędu
             else:

@@ -133,8 +133,8 @@ int main()
     PCA9685_Init(&hi2c1);
 
     // Inicjalizacja serwomechanizmów
-    Servo_Init(&hi2c1, &servoSG5010, 180);
-    Servo_Init(&hi2c1, &servo1201MG, 180);
+    Servo_Init(&hi2c1, &servoSG5010, 90);
+    Servo_Init(&hi2c1, &servo1201MG, 90);
 
     // Inicjalizacja SPI
     SPI_Init();
