@@ -16,7 +16,7 @@ class MotorCortex:
         self.action = action
 
     def send_frame(self, cmd_type, channel, data):
-        start_byte = 0xAA
+        start_byte = self.spi.START_BYTE
         checksum = self._calculate_checksum(start_byte, cmd_type, channel, data)
         frame = [start_byte, cmd_type, channel, data, checksum]
         response = self.spi.send(frame)
@@ -38,12 +38,12 @@ class MotorCortex:
         """
         # Send request frame
         request = [
-            self.START_BYTE,
-            self.CMD_GET_POSITION,
+            self.spi.START_BYTE,
+            self.spi.CMD_GET_POSITION,
             channel,
             0x00,
             self._compute_checksum(
-                self.START_BYTE, self.CMD_GET_POSITION, channel, 0x00
+                self.spi.START_BYTE, self.spi.CMD_GET_POSITION, channel, 0x00
             ),
         ]
 
@@ -53,7 +53,7 @@ class MotorCortex:
         response = self.spi.receive(5)
 
         # Validate response
-        if response[0] != self.START_BYTE:
+        if response[0] != self.spi.START_BYTE:
             raise Exception(f"Invalid start byte: {response[0]:#x}")
 
         if response[2] != channel:

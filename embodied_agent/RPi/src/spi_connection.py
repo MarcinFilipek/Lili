@@ -5,6 +5,10 @@ class SPIConnection:
     def __init__(self):
         self.spi = spidev.SpiDev()
 
+        self.START_BYTE = 0xAA
+        self.CMD_SET_POSITION = 0x01
+        self.CMD_GET_POSITION = 0x02
+
         try:
             self.spi.open(0, 0)
             self.spi.max_speed_hz = 500000
