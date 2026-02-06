@@ -24,6 +24,25 @@ class SPIConnection:
         except Exception as e:
             print(f"Error sending data: {e}")
 
+    def _receive(self, num_bytes):
+        """
+        Receive data via SPI.
+
+        Args:
+            num_bytes: number of bytes to read
+
+        Returns:
+            list of bytes
+        """
+        try:
+            # Send dummy bytes to clock in response
+            dummy = [0x00] * num_bytes
+            response = self.spi.xfer2(dummy)
+            return response
+        except Exception as e:
+            print(f"Error receiving data: {e}")
+            return [0x00] * num_bytes
+
     def send_frame(self, cmd_type, channel, data):
         start_byte = self.START_BYTE
         checksum = self._calculate_checksum(start_byte, cmd_type, channel, data)
@@ -53,10 +72,10 @@ class SPIConnection:
             ),
         ]
 
-        self.spi.send_frame(request)
+        self.send_frame(request)
 
         # Read response frame
-        response = self.spi.receive(5)
+        response = self._receive(5)
 
         # Validate response
         if response[0] != self.START_BYTE:
