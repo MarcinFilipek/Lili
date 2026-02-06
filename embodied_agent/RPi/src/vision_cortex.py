@@ -16,6 +16,8 @@ class VisionCortex:
         features["brightness"] = self._extract_brightness(gray_frame)
         features["corners"] = self._extract_corners(gray_frame)
 
+        print(f"Brightness: {features['brightness']}")
+        print(f"Corners: {features['corners']}")
         return features
 
     def _extract_brightness(self, gray_frame):
