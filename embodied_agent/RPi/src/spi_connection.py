@@ -34,7 +34,7 @@ class SPIConnection:
     def send(self, data):
         try:
             response = self.spi.xfer2(data)
-            time.sleep(0.05)
+            # time.sleep(0.05)
             return response
         except Exception as e:
             print(f"Error sending data: {e}")
