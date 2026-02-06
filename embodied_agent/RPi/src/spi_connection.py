@@ -136,4 +136,4 @@ class SPIConnection:
         data_byte = response[3]
         position = self._map_from_byte(data_byte)
 
-        return data_byte
+        return position
