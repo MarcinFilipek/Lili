@@ -16,17 +16,23 @@ def send_frame(cmd_type, channel, data):
     checksum = calculate_checksum(start_byte, cmd_type, channel, data)
     frame = [start_byte, cmd_type, channel, data, checksum]
 
-    # Phase 1: Send request (STM32 receives command, sends garbage back)
-    spi.xfer2(frame)
+    print(f"\n📤 Sending: {[hex(b) for b in frame]}")
 
-    # Wait for STM32 to process (150μs measured, use 500μs for safety)
-    time.sleep(0.0005)  # 0.5ms
+    # Phase 1: Send request (STM32 receives command, sends garbage back)
+    phase1_response = spi.xfer2(frame)
+    print(
+        f"📥 Phase 1 response (should be garbage): {[hex(b) for b in phase1_response]}"
+    )
+
+    # Wait for STM32 to process (try longer delay to be safe)
+    time.sleep(0.005)  # 5ms - much longer than 150μs measured
 
     # Phase 2: Send dummy bytes (STM32 sends REAL response during this)
     dummy = [0x00] * 5
-    response = spi.xfer2(dummy)
+    phase2_response = spi.xfer2(dummy)
+    print(f"📥 Phase 2 response (should be ACK): {[hex(b) for b in phase2_response]}")
 
-    return response
+    return phase2_response
 
 
 # Ustaw servo 0 na 90 stopni
