@@ -1,4 +1,5 @@
 import spidev
+import time
 
 
 class SPIConnection:
@@ -17,6 +18,18 @@ class SPIConnection:
 
     def _calculate_checksum(self, start, cmd, channel, data):
         return start ^ cmd ^ channel ^ data
+
+    def _map_from_byte(self, byte_value):
+        """
+        Convert byte (0-255) to position (-1 to 1).
+
+        Args:
+            byte_value: 0-255
+
+        Returns:
+            position: -1.0 to 1.0
+        """
+        return (byte_value / 127.5) - 1.0
 
     def send(self, data):
         try:
@@ -73,6 +86,13 @@ class SPIConnection:
         ]
 
         self.send(request)
+
+        # ⏱️ Wait for STM32 to process request and prepare response
+        # STM32 needs time to:
+        # 1. Receive and validate request frame
+        # 2. Read servo position from hardware
+        # 3. Prepare response frame
+        time.sleep(0.01)  # 10ms delay - adjust if needed
 
         # Read response frame
         response = self._receive(5)
