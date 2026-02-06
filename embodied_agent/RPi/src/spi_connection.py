@@ -76,6 +76,7 @@ class SPIConnection:
 
         # Read response frame
         response = self._receive(5)
+        print(f"Response: {response}")
 
         # Validate response
         if response[0] != self.START_BYTE:
