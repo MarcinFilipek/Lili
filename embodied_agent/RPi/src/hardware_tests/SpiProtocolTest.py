@@ -18,21 +18,26 @@ def send_frame(cmd_type, channel, data):
 
     print(f"\n📤 Sending: {[hex(b) for b in frame]}")
 
-    # Phase 1: Send request (STM32 receives command, sends garbage back)
+    # Phase 1: Send request (STM32 receives command, sends old buffer)
     phase1_response = spi.xfer2(frame)
-    print(
-        f"📥 Phase 1 response (should be garbage): {[hex(b) for b in phase1_response]}"
-    )
+    print(f"📥 Phase 1 (old buffer): {[hex(b) for b in phase1_response]}")
 
-    # Wait for STM32 to process (try longer delay to be safe)
-    time.sleep(0.005)  # 5ms - much longer than 150μs measured
+    # Wait for STM32 to process
+    time.sleep(0.001)  # 1ms
 
-    # Phase 2: Send dummy bytes (STM32 sends REAL response during this)
+    # Phase 2: Send dummy bytes (STM32 loads response into TX buffer)
     dummy = [0x00] * 5
     phase2_response = spi.xfer2(dummy)
-    print(f"📥 Phase 2 response (should be ACK): {[hex(b) for b in phase2_response]}")
+    print(f"📥 Phase 2 (transitioning): {[hex(b) for b in phase2_response]}")
 
-    return phase2_response
+    # Small delay
+    time.sleep(0.001)  # 1ms
+
+    # Phase 3: Send dummy bytes AGAIN (NOW we get the real response!)
+    phase3_response = spi.xfer2(dummy)
+    print(f"📥 Phase 3 (REAL response): {[hex(b) for b in phase3_response]}")
+
+    return phase3_response
 
 
 # Ustaw servo 0 na 90 stopni
