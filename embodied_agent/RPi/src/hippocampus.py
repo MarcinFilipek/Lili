@@ -41,6 +41,7 @@ class Hippocampus:
 
     def _gamma_life(self, features, action):
         gamma_val = self.rhythms["gamma"].value
+        print(f"Gamma: {gamma_val}")
         if gamma_val > 0.95 and not self._gamma_processed:
             self._gamma_processed = True
             print("🔴 γ - gamma processing")
