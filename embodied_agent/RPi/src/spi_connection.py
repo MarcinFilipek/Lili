@@ -33,7 +33,9 @@ class SPIConnection:
 
     def send(self, data):
         try:
-            self.spi.xfer2(data)
+            response = self.spi.xfer2(data)
+            time.sleep(0.05)
+            return response
         except Exception as e:
             print(f"Error sending data: {e}")
 
@@ -85,17 +87,10 @@ class SPIConnection:
             ),
         ]
 
-        self.send(request)
-
-        # ⏱️ Wait for STM32 to process request and prepare response
-        # STM32 needs time to:
-        # 1. Receive and validate request frame
-        # 2. Read servo position from hardware
-        # 3. Prepare response frame
-        time.sleep(0.01)  # 10ms delay - adjust if needed
+        response = self.send(request)
 
         # Read response frame
-        response = self._receive(5)
+        # response = self._receive(5)
         print(f"Response: {response}")
 
         # Validate response
