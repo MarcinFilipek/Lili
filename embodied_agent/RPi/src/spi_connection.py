@@ -72,10 +72,10 @@ class SPIConnection:
             ),
         ]
 
-        response = self.send(request)
+        self.send(request)
 
         # Read response frame
-        # response = self._receive(5)
+        response = self._receive(5)
 
         # Validate response
         if response[0] != self.START_BYTE:
