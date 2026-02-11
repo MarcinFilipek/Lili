@@ -121,9 +121,7 @@ class SPIConnection:
             )
 
         if response[2] != channel:
-            raise Exception(f"Ch
-                    annel mismatch: expected {channel}, got {response[2]}")
-                
+            raise Exception(f"Channel mismatch: expected {channel}, got {response[2]}")
 
         # Verify checksum
         expected_checksum = self._calculate_checksum(
