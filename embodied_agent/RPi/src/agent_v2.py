@@ -2,7 +2,7 @@ from brain_state import BrainState
 from motor_cortex import MotorCortex
 from vision_cortex import VisionCortex
 from eye import Eye
-from hippocampus import Hippocampus
+from hippocampus_without_rhythms import HippocampusWithoutRhythms
 from predictive_system import PredictiveSystem
 
 
@@ -12,21 +12,32 @@ class AgentV2:
         self.brain_state = BrainState()
         self.motor_cortex = MotorCortex()
         self.vision_cortex = VisionCortex()
-        self.hippocampus = Hippocampus(rhythms=self.brain_state.rhythms)
+        self.hippocampus = HippocampusWithoutRhythms()
         self.predictive_system = PredictiveSystem()
 
         self.gamma_rhythm = self.brain_state.rhythms["gamma"]
         self.theta_rhythm = self.brain_state.rhythms["theta"]
         self.brain_state.start()
+        self.wake_up()
+
+    def wake_up(self):
+        self.hippocampus.wake_up()
+        proprioception = self.motor_cortex.update_proprioception()
+        features = self.vision_cortex.extract_features(frame)
+        self.hippocampus.life(features, self.motor_cortex.action)
 
     def life(self):
         while True:
             proprioception = self.motor_cortex.update_proprioception()
-            print(f"Proprioception: {proprioception}")
+            # print(f"Proprioception: {proprioception}")
             frame = self.eye.capture(gray=True, blur=True)
             features = self.vision_cortex.extract_features(frame)
 
             self.hippocampus.life(features, self.motor_cortex.action)
+            error, error_breakdown = self.predictive_system.compute_error(
+                predictions, features
+            )
+            print(f"Error: {error:.3f}, Error breakdown: {error_breakdown}")
 
 
 def main():

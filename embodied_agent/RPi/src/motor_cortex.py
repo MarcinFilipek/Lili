@@ -5,7 +5,7 @@ import numpy as np
 class MotorCortex:
     def __init__(self):
         self.spi = SPIConnection()  # To STM32
-        self.action = np.array([0, 0, 0, 0, 1])
+        self.action = np.array([0.0, 0.0])
 
         self.actual_position = np.array([0.0, 0.0])
         self.target_position = np.array([0.0, 0.0])

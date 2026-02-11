@@ -14,7 +14,7 @@ class PredictiveSystem:
         self.predictors = {
             "brightness": PredictiveMatrix(
                 feature_dim=16,  # 4×4 grid
-                action_dim=5,  # [forward, backward, left, right, do_nothing]
+                action_dim=2,  # [Δ_head, Δ_eye]
             )
         }
 
@@ -29,7 +29,7 @@ class PredictiveSystem:
 
         Args:
             features: dict {'brightness': np.array([16]), ...}
-            action: np.array([5]) - one-hot encoded action
+            action: np.array([2]) - one-hot encoded action
 
         Returns:
             predictions: dict {'brightness': np.array([16]), ...}
@@ -111,7 +111,7 @@ class PredictiveSystem:
         Args:
             feature_name: str (e.g., 'edges')
             feature_dim: int (e.g., 64 for 8×8 grid)
-            action_dim: int (default 5)
+            action_dim: int (default 2)
         """
         if feature_name not in self.predictors:
             self.predictors[feature_name] = PredictiveMatrix(
