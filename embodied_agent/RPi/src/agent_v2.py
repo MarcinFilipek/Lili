@@ -21,8 +21,8 @@ class AgentV2:
 
     def life(self):
         while True:
-            # proprioception = self.motor_cortex.update_proprioception()
-            # print(f"Proprioception: {proprioception}")
+            proprioception = self.motor_cortex.update_proprioception()
+            print(f"Proprioception: {proprioception}")
             frame = self.eye.capture(gray=True, blur=True)
             features = self.vision_cortex.extract_features(frame)
 
