@@ -22,7 +22,7 @@ class AgentV2:
 
     def wake_up(self):
         self.hippocampus.wake_up()
-        proprioception = self.motor_cortex.update_proprioception()
+        frame = self.eye.capture(gray=True, blur=True)
         features = self.vision_cortex.extract_features(frame)
         self.hippocampus.life(features, self.motor_cortex.action)
 
