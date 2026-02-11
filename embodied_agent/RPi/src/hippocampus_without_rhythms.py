@@ -9,7 +9,7 @@ class HippocampusWithoutRhythms:
         self.ltm_sequences = []
         self.sleeping = False
 
-    def life(self, features, action)
+    def life(self, features, action):
         self._gamma_life(features, action)
         self._beta_life(features, action)
         self._alpha_life(features, action)
