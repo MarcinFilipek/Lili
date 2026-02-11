@@ -33,13 +33,10 @@ class HippocampusWithoutRhythms:
                     {
                         "type": "feature",
                         "data": feature_vec.copy(),
-                        "gamma": gamma_val,
                     }
                 )
 
-                buffer.append(
-                    {"type": "action", "data": action.copy(), "gamma": gamma_val}
-                )
+                buffer.append({"type": "action", "data": action.copy()})
 
                 # Trim buffer if too large
                 if len(buffer) > self.max_buffer_size:
