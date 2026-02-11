@@ -15,6 +15,8 @@ class AgentV2:
         self.hippocampus = HippocampusWithoutRhythms()
         self.predictive_system = PredictiveSystem()
 
+        self.previous_features = None
+
         self.gamma_rhythm = self.brain_state.rhythms["gamma"]
         self.theta_rhythm = self.brain_state.rhythms["theta"]
         self.brain_state.start()
@@ -25,6 +27,7 @@ class AgentV2:
         frame = self.eye.capture(gray=True, blur=True)
         features = self.vision_cortex.extract_features(frame)
         self.hippocampus.life(features, self.motor_cortex.action)
+        self.previous_features = features
 
     def life(self):
         while True:
@@ -34,10 +37,16 @@ class AgentV2:
             features = self.vision_cortex.extract_features(frame)
 
             self.hippocampus.life(features, self.motor_cortex.action)
+
+            predictions = self.predictive_system.predict(
+                self.previous_features, self.motor_cortex.action
+            )
             error, error_breakdown = self.predictive_system.compute_error(
                 predictions, features
             )
             print(f"Error: {error:.3f}, Error breakdown: {error_breakdown}")
+
+            self.previous_features = features
 
 
 def main():
