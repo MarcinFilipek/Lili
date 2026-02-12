@@ -36,7 +36,7 @@ class AgentV2:
             frame = self.eye.capture(gray=True, blur=True)
             features = self.vision_cortex.extract_features(frame)
 
-            print(f"Features: {features}")
+            # print(f"Features: {features}")
 
             predictions = self.predictive_system.predict(
                 self.previous_features, self.motor_cortex.action
@@ -50,9 +50,9 @@ class AgentV2:
 
             seq = self.hippocampus.extract_sequences()
 
-            print(f"Stm brightness: {len(self.hippocampus.stm_buffers['brightness'])}")
-            print(f"Stm corners: {len(self.hippocampus.stm_buffers['corners'])}")
-            print(f"Sequences: {seq}")
+            # print(f"Stm brightness: {len(self.hippocampus.stm_buffers['brightness'])}")
+            # print(f"Stm corners: {len(self.hippocampus.stm_buffers['corners'])}")
+            print(f"Sequences: {len(seq)}")
 
             if len(seq) > 0:
                 self.predictive_system.consolidate(seq, learning_rate=0.0005)
