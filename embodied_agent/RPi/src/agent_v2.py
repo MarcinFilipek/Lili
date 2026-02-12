@@ -56,7 +56,7 @@ class AgentV2:
             print(f"Sequences corners: {len(seq['corners'])}")
 
             if len(seq) > 0:
-                self.predictive_system.consolidate(seq, learning_rate=0.0005)
+                self.predictive_system.consolidate(seq, learning_rate=0.01)
 
             self.previous_features = features
 
