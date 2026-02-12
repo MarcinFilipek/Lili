@@ -48,6 +48,7 @@ class AgentV2:
 
             seq = self.hippocampus.extract_sequences()
 
+            print(f"Sequences: {len(seq)}")
             if len(seq) > 0:
                 self.predictive_system.consolidate(seq, learning_rate=0.0005)
 
