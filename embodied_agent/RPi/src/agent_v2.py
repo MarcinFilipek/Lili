@@ -36,6 +36,8 @@ class AgentV2:
             frame = self.eye.capture(gray=True, blur=True)
             features = self.vision_cortex.extract_features(frame)
 
+            print(f"Features: {features}")
+
             predictions = self.predictive_system.predict(
                 self.previous_features, self.motor_cortex.action
             )
