@@ -36,8 +36,6 @@ class AgentV2:
             frame = self.eye.capture(gray=True, blur=True)
             features = self.vision_cortex.extract_features(frame)
 
-            self.hippocampus.life(features, self.motor_cortex.action)
-
             predictions = self.predictive_system.predict(
                 self.previous_features, self.motor_cortex.action
             )
@@ -45,6 +43,13 @@ class AgentV2:
                 predictions, features
             )
             print(f"Error: {error:.3f}, Error breakdown: {error_breakdown}")
+
+            self.hippocampus.life(features, self.motor_cortex.action)
+
+            seq = self.hippocampus.extract_sequences()
+
+            if len(seq) > 0:
+                self.predictive_system.consolidate(seq, learning_rate=0.0005)
 
             self.previous_features = features
 
