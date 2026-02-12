@@ -3,7 +3,7 @@ import numpy as np
 
 class HippocampusWithoutRhythms:
     def __init__(self):
-        self.stm_buffers = {"brightness": []}
+        self.stm_buffers = {"brightness": [], "corners": []}
         self.max_buffer_size = 20
 
         self.ltm_sequences = []
