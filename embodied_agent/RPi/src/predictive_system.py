@@ -15,7 +15,11 @@ class PredictiveSystem:
             "brightness": PredictiveMatrix(
                 feature_dim=16,  # 4×4 grid
                 action_dim=2,  # [Δ_head, Δ_eye]
-            )
+            ),
+            "corners": PredictiveMatrix(
+                feature_dim=36,  # 6×6 grid
+                action_dim=2,  # [Δ_head, Δ_eye]
+            ),
         }
 
         # Later you can add:
