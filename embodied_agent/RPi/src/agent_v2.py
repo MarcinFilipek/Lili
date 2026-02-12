@@ -52,7 +52,8 @@ class AgentV2:
 
             # print(f"Stm brightness: {len(self.hippocampus.stm_buffers['brightness'])}")
             # print(f"Stm corners: {len(self.hippocampus.stm_buffers['corners'])}")
-            print(f"Sequences: {len(seq)}")
+            print(f"Sequences brightness: {len(seq['brightness'])}")
+            print(f"Sequences corners: {len(seq['corners'])}")
 
             if len(seq) > 0:
                 self.predictive_system.consolidate(seq, learning_rate=0.0005)
