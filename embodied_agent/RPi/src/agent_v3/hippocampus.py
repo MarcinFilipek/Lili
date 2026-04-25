@@ -1,5 +1,4 @@
 from collections import deque
-from torchvision.datasets._stereo_matching import FallingThingsStereo
 
 STM_CAPACITY = 30
 
