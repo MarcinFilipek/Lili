@@ -5,7 +5,7 @@ STM_CAPACITY = 30
 
 class Hippocampus:
     def __init__(self):
-        self.slepping = True
+        self.sleeping = True
         self.stm = deque(maxlen=STM_CAPACITY)
         self.ltm = []
 

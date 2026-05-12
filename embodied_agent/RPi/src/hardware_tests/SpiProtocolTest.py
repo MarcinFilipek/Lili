@@ -23,7 +23,7 @@ def send_frame(cmd_type, channel, data):
     print(f"📥 Phase 1 (old buffer): {[hex(b) for b in phase1_response]}")
 
     # Wait for STM32 to process
-    time.sleep(0.02)  # 1ms
+    time.sleep(0.02)  # 20ms
 
     # Phase 2: Send dummy bytes (STM32 loads response into TX buffer)
     dummy = [0x00] * 5
@@ -31,7 +31,7 @@ def send_frame(cmd_type, channel, data):
     print(f"📥 Phase 2 (transitioning): {[hex(b) for b in phase2_response]}")
 
     # Small delay
-    time.sleep(0.02)  # 1ms
+    time.sleep(0.02)  # 20ms
 
     # Phase 3: Send dummy bytes AGAIN (NOW we get the real response!)
     phase3_response = spi.xfer2(dummy)
