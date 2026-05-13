@@ -11,7 +11,7 @@ class VisionCortex:
         return features
 
     def _extract_brightness(self, gray_frame):
-        """Brightness in 4×4 grid"""
+        """Brightness in 3×3 grid (brightness_grid_size=3 → 9-dim vector)"""
         h, w = gray_frame.shape
         g = self.brightness_grid_size
         cell_h, cell_w = h // g, w // g

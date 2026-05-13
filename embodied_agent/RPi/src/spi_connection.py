@@ -94,7 +94,7 @@ class SPIConnection:
             raise
 
         # Wait for STM32 to process
-        time.sleep(0.03)  # 1ms
+        time.sleep(0.03)  # 30ms
 
         # Phase 2: Send dummy bytes (STM32 loads response into TX buffer)
         dummy = [0x00] * 5
@@ -105,7 +105,7 @@ class SPIConnection:
             raise
 
         # Small delay
-        time.sleep(0.03)  # 1ms
+        time.sleep(0.03)  # 30ms
 
         # Phase 3: Send dummy bytes AGAIN (NOW we get the real response!)
         try:

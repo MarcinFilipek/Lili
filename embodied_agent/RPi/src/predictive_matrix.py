@@ -78,11 +78,8 @@ class PredictiveMatrix:
 
             # Hebbian update: strengthen the 3-way association
             # ΔW[i,j,k] = lr * f_t[i] * a[j] * f_t1[k]
-            # This is the outer product of three vectors
-            for i in range(self.feature_dim):
-                for j in range(self.action_dim):
-                    for k in range(self.feature_dim):
-                        self.W[i, j, k] += learning_rate * f_t[i] * a[j] * f_t1[k]
+            # Equivalent to the outer product of three vectors (vectorised)
+            self.W += learning_rate * np.einsum("i,j,k->ijk", f_t, a, f_t1)
 
         avg_error = total_error / len(sequences)
 
