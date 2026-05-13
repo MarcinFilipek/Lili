@@ -7,10 +7,29 @@ SPI_HandleTypeDef hspi1;
 volatile uint8_t spi_rx_frame[5] = {0};
 volatile uint8_t spi_tx_frame[5] = {0xAA, 0x00, 0x00, 0x00, 0x00}; // Domyślna odpowiedź
 
-// Parser ramek
-SPI_Frame_t current_frame;
-volatile uint8_t frame_ready = 0;
+// Kolejka komend (single-producer ISR, single-consumer main loop)
+SPI_CmdQueue_t spi_cmd_queue = {.head = 0, .tail = 0};
 volatile uint8_t response_pending = 0;
+
+static void SPI_Queue_Push(const SPI_Frame_t *frame)
+{
+    uint8_t next_head = (spi_cmd_queue.head + 1) & (SPI_CMD_QUEUE_SIZE - 1);
+    if (next_head != spi_cmd_queue.tail) // nie przepełniaj
+    {
+        spi_cmd_queue.frames[spi_cmd_queue.head] = *frame;
+        spi_cmd_queue.head = next_head;
+    }
+}
+
+uint8_t SPI_Queue_Pop(SPI_Frame_t *out_frame)
+{
+    if (spi_cmd_queue.tail == spi_cmd_queue.head)
+        return 0; // pusta
+
+    *out_frame = spi_cmd_queue.frames[spi_cmd_queue.tail];
+    spi_cmd_queue.tail = (spi_cmd_queue.tail + 1) & (SPI_CMD_QUEUE_SIZE - 1);
+    return 1;
+}
 
 void SPI_Init(void)
 {
@@ -95,16 +114,16 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
     if (hspi->Instance == SPI1)
     {
-        // Skopiuj odebraną ramkę
-        memcpy((void*)&current_frame, (void*)spi_rx_frame, 5);
-        
-        // Sprawdź poprawność ramki
-        if (SPI_IsFrameValid(&current_frame))
+        SPI_Frame_t rx;
+        memcpy((void*)&rx, (void*)spi_rx_frame, 5);
+
+        // Wrzuć do kolejki tylko poprawne ramki
+        if (SPI_IsFrameValid(&rx))
         {
-            frame_ready = 1;  // Sygnalizuj main loop
+            SPI_Queue_Push(&rx);
         }
-        
-        // Jeśli nie ma nowej odpowiedzi, wyślij dummy frame
+
+        // Jeśli nie ma przygotowanej odpowiedzi, wyślij dummy frame
         if (!response_pending)
         {
             spi_tx_frame[0] = 0xAA;
@@ -117,11 +136,11 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
         {
             response_pending = 0;
         }
-        
+
         // Restart komunikacji - kolejne 5 bajtów
-        HAL_SPI_TransmitReceive_IT(&hspi1, 
-                                   (uint8_t*)spi_tx_frame, 
-                                   (uint8_t*)spi_rx_frame, 
+        HAL_SPI_TransmitReceive_IT(&hspi1,
+                                   (uint8_t*)spi_tx_frame,
+                                   (uint8_t*)spi_rx_frame,
                                    5);
     }
 }

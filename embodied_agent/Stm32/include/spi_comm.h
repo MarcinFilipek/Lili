@@ -33,21 +33,33 @@ extern "C"
         uint8_t checksum;   // Suma kontrolna
     } SPI_Frame_t;
 
+    // Rozmiar kolejki komend (musi być potęgą 2)
+#define SPI_CMD_QUEUE_SIZE 8
+
+    // Ring buffer komend
+    typedef struct
+    {
+        SPI_Frame_t frames[SPI_CMD_QUEUE_SIZE];
+        volatile uint8_t head; // zapisuje ISR
+        volatile uint8_t tail; // czyta main loop
+    } SPI_CmdQueue_t;
+
     // Eksport globalnych zmiennych SPI
     extern SPI_HandleTypeDef hspi1;
     extern volatile uint8_t spi_rx_frame[5];
     extern volatile uint8_t spi_tx_frame[5];
 
-    // Parser ramek
-    extern SPI_Frame_t current_frame;
-    extern volatile uint8_t frame_ready;
     extern volatile uint8_t response_pending;
+
+    // Kolejka komend
+    extern SPI_CmdQueue_t spi_cmd_queue;
 
     // Funkcje SPI
     void SPI_Init(void);
     void SPI_PrepareResponse(SPI_Frame_t *frame);
     uint8_t SPI_CalculateChecksum(SPI_Frame_t *frame);
     uint8_t SPI_IsFrameValid(SPI_Frame_t *frame);
+    uint8_t SPI_Queue_Pop(SPI_Frame_t *out_frame);
 
 #ifdef __cplusplus
 }

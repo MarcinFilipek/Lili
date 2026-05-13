@@ -24,9 +24,14 @@ void ProcessSPIFrame(SPI_Frame_t *frame)
     {
     case SPI_CMD_SET_SERVO:
     {
-        // Ustaw kąt serwa
         uint8_t angle = frame->data;
 
+        // Najpierw przygotuj ACK - zanim I2C zablokuje pętlę
+        response.cmd_type = SPI_CMD_ACK;
+        response.data = angle;
+        SPI_PrepareResponse(&response);
+
+        // Potem wykonaj I2C (blokujące, ale ACK już w buforze TX)
         if (frame->channel == 1)
         {
             Servo_SetAngleWithConfig(&hi2c1, &servoSG5010, angle);
@@ -35,11 +40,6 @@ void ProcessSPIFrame(SPI_Frame_t *frame)
         {
             Servo_SetAngleWithConfig(&hi2c1, &servo1201MG, angle);
         }
-
-        // Wyślij potwierdzenie
-        response.cmd_type = SPI_CMD_ACK;
-        response.data = angle;
-        SPI_PrepareResponse(&response);
         break;
     }
 
@@ -161,11 +161,11 @@ int main()
         //     Servo_SetAngleWithConfig(&hi2c1, &servo1201MG, servo_angle);
         // }
 
-        // Obsługa ramek SPI
-        if (frame_ready)
+        // Obsługa ramek SPI - drainuj kolejkę komend
+        SPI_Frame_t cmd_frame;
+        if (SPI_Queue_Pop(&cmd_frame))
         {
-            frame_ready = 0;
-            ProcessSPIFrame(&current_frame);
+            ProcessSPIFrame(&cmd_frame);
         }
     }
 }
