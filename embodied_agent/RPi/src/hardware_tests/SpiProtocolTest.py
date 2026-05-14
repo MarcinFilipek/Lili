@@ -4,7 +4,7 @@ import time
 spi = spidev.SpiDev()
 spi.open(0, 0)
 spi.mode = 0
-spi.max_speed_hz = 100000
+spi.max_speed_hz = 10000
 
 
 def calculate_checksum(start, cmd, channel, data):

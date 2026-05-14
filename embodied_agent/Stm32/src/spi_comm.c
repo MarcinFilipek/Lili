@@ -40,16 +40,23 @@ void SPI_Init(void)
     __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_SYSCFG_CLK_ENABLE();
 
-    // Konfiguracja pinów SPI1
-    // PA4  -> SPI1_NSS  (Chip Select)
-    // PA5  -> SPI1_SCK  (Clock)
-    // PA6  -> SPI1_MISO (Master In Slave Out)
-    // PA7  -> SPI1_MOSI (Master Out Slave In)
-    GPIO_InitStruct.Pin = GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7;
+    // Konfiguracja pinów SPI1 z filtrowaniem zakłóceń (slew-rate = LOW)
+    // PA4 (CS) - PULLUP (nieaktywny stan to HIGH)
+    GPIO_InitStruct.Pin = GPIO_PIN_4;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW; // Działa jak filtr dolnoprzepustowy!
     GPIO_InitStruct.Alternate = GPIO_AF0_SPI1;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    // PA5 (SCK) - PULLDOWN (przy CPOL=0, nieaktywny zegar to LOW)
+    GPIO_InitStruct.Pin = GPIO_PIN_5;
+    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    // PA6 (MISO), PA7 (MOSI) - NOPULL
+    GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_7;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
     // Konfiguracja SPI1 jako Slave
