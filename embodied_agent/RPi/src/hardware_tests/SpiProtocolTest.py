@@ -4,7 +4,7 @@ import time
 spi = spidev.SpiDev()
 spi.open(0, 0)
 spi.mode = 0
-spi.max_speed_hz = 500000
+spi.max_speed_hz = 100000
 
 
 def calculate_checksum(start, cmd, channel, data):
@@ -18,26 +18,27 @@ def send_frame(cmd_type, channel, data):
 
     print(f"\n📤 Sending: {[hex(b) for b in frame]}")
 
-    # Phase 1: Send request (STM32 receives command, sends old buffer)
-    phase1_response = spi.xfer2(frame)
-    print(f"📥 Phase 1 (old buffer): {[hex(b) for b in phase1_response]}")
-
-    # Wait for STM32 to process
-    time.sleep(0.02)  # 20ms
-
-    # Phase 2: Send dummy bytes (STM32 loads response into TX buffer)
+    # Phase 1: Send request
+    spi.xfer2(frame)
+    
+    # Polling Phase: Wait for real response
+    max_retries = 20
     dummy = [0x00] * 5
-    phase2_response = spi.xfer2(dummy)
-    print(f"📥 Phase 2 (transitioning): {[hex(b) for b in phase2_response]}")
+    
+    for i in range(max_retries):
+        time.sleep(0.015)  # Wait 15ms before polling to give STM32 time to re-arm SPI
+        response = spi.xfer2(dummy)
+        
+        # Check if we got a real response (starts with 0xAA and is not the dummy 0x00 cmd)
+        # 0xCC is ACK, 0xFF is NACK (based on expected values)
+        if response and response[0] == 0xAA and response[1] in (0xCC, 0xFF):
+            print(f"📥 REAL response (poll {i+1}): {[hex(b) for b in response]}")
+            return response
+            
+        print(f"   Poll {i+1} (transitioning): {[hex(b) for b in response]}")
 
-    # Small delay
-    time.sleep(0.02)  # 20ms
-
-    # Phase 3: Send dummy bytes AGAIN (NOW we get the real response!)
-    phase3_response = spi.xfer2(dummy)
-    print(f"📥 Phase 3 (REAL response): {[hex(b) for b in phase3_response]}")
-
-    return phase3_response
+    print("❌ Timeout waiting for response!")
+    return [0x00] * 5
 
 
 EXPECTED = {
@@ -66,20 +67,20 @@ for i in range(0, iterations):
     print(f"\n{'='*50} Iteration {i+1}/{iterations} {'='*50}")
 
     response_from_set = send_frame(0x01, 0, 50)
-    # response should be ['0xaa', '0xcc', '0x0', '0x32', '0x54']
     check("SET ch0", response_from_set)
+    time.sleep(0.02)  # Give STM32 time to re-arm SPI between transactions
 
     response_from_set2 = send_frame(0x01, 1, 60)
-    # response should be ['0xaa', '0xcc', '0x1', '0x3c', '0x5b']
     check("SET ch1", response_from_set2)
+    time.sleep(0.02)
 
     response = send_frame(0x02, 0, 0x00)
-    # response should be ['0xaa', '0xcc', '0x0', '0x32', '0x54']
     check("GET ch0", response)
+    time.sleep(0.02)
 
     response = send_frame(0x02, 1, 0x00)
-    # response should be ['0xaa', '0xcc', '0x1', '0x3c', '0x5b']
     check("GET ch1", response)
+    time.sleep(0.02)
 
 
 # ── Summary ──────────────────────────────────────────────────────────────────

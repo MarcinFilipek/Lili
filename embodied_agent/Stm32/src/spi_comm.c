@@ -35,9 +35,10 @@ void SPI_Init(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    // Włącz zegar dla SPI1 i GPIOA
+    // Włącz zegar dla SPI1, GPIOA i SYSCFG
     __HAL_RCC_SPI1_CLK_ENABLE();
     __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_SYSCFG_CLK_ENABLE();
 
     // Konfiguracja pinów SPI1
     // PA4  -> SPI1_NSS  (Chip Select)
@@ -72,6 +73,16 @@ void SPI_Init(void)
     // Włącz przerwanie SPI
     HAL_NVIC_SetPriority(SPI1_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(SPI1_IRQn);
+
+    // Ręczna konfiguracja EXTI dla pinu PA4 (NSS) - zbocze narastające
+    // EXTI na pinie CS gwarantuje, że STM32 powróci do nasłuchiwania na początek bufora 
+    // nawet jeśli Master zdesynchronizuje transmisję.
+    SYSCFG->EXTICR[1] &= ~(0x000F); // Mapuj PA4 do EXTI4
+    EXTI->IMR |= (1 << 4);          // Odmaskuj przerwanie EXTI4
+    EXTI->RTSR |= (1 << 4);         // Przerwanie na zboczu narastającym (Rising Trigger)
+
+    HAL_NVIC_SetPriority(EXTI4_15_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
 
     // Rozpocznij ciągłą komunikację full-duplex (5 bajtów)
     HAL_SPI_TransmitReceive_IT(&hspi1, 
@@ -149,4 +160,25 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 void SPI1_IRQHandler(void)
 {
     HAL_SPI_IRQHandler(&hspi1);
+}
+
+// Obsługa przerwania EXTI dla pinu CS (PA4)
+void EXTI4_15_IRQHandler(void)
+{
+    // Jeśli przerwanie przyszło z linii 4 (PA4)
+    if(EXTI->PR & (1 << 4))
+    {
+        // Wyczyść flagę przerwania
+        EXTI->PR = (1 << 4);
+        
+        // CS (NSS) poszedł do góry - to koniec ramki wyznaczony przez Mastera.
+        // Niezależnie od stanu automatu HAL, wymuszamy reset, aby przy
+        // następnym opuszczeniu CS zacząć od bajtu nr 0.
+        HAL_SPI_Abort_IT(&hspi1);
+        
+        HAL_SPI_TransmitReceive_IT(&hspi1, 
+                                   (uint8_t*)spi_tx_frame, 
+                                   (uint8_t*)spi_rx_frame, 
+                                   5);
+    }
 }
