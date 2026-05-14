@@ -11,6 +11,21 @@ def calculate_checksum(start, cmd, channel, data):
     return start ^ cmd ^ channel ^ data
 
 
+def resync_spi():
+    print("🔄 Próba resynchronizacji SPI...")
+    for _ in range(5):
+        resp = spi.xfer2([0x00] * 5)
+        time.sleep(0.01)
+        if resp[0] == 0xAA:
+            print("✅ SPI zsynchronizowane pomyślnie!")
+            return True
+        # Send 1 byte to shift the STM32 internal frame counter by 1
+        spi.xfer2([0x00])
+        time.sleep(0.01)
+    print("❌ Resynchronizacja nie powiodła się!")
+    return False
+
+
 def send_frame(cmd_type, channel, data):
     start_byte = 0xAA
     checksum = calculate_checksum(start_byte, cmd_type, channel, data)
@@ -38,6 +53,7 @@ def send_frame(cmd_type, channel, data):
         print(f"   Poll {i+1} (transitioning): {[hex(b) for b in response]}")
 
     print("❌ Timeout waiting for response!")
+    resync_spi()
     return [0x00] * 5
 
 

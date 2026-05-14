@@ -159,8 +159,9 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 {
     if (hspi->Instance == SPI1)
     {
-        // Jeśli wystąpił błąd, musimy odzyskać komunikację
-        HAL_SPI_Abort_IT(&hspi1);
+        // Używamy funkcji blokującej HAL_SPI_Abort. HAL_SPI_Abort_IT jest asynchroniczne, 
+        // więc natychmiastowe wywołanie TransmitReceive_IT po nim zwracało HAL_BUSY i blokowało SPI na zawsze!
+        HAL_SPI_Abort(&hspi1);
         HAL_SPI_TransmitReceive_IT(&hspi1, 
                                    (uint8_t*)spi_tx_frame, 
                                    (uint8_t*)spi_rx_frame, 
