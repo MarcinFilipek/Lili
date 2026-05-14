@@ -26,7 +26,16 @@ void ProcessUARTFrame(UART_Frame_t *frame)
     case UART_CMD_SET_SERVO:
         if (frame->channel < MAX_SERVOS)
         {
-            Servo_SetPosition(frame->channel, frame->data);
+            uint8_t angle = frame->data;
+            if (frame->channel == 1)
+            {
+                Servo_SetAngleWithConfig(&hi2c1, &servoSG5010, angle);
+            }
+            else if (frame->channel == 0)
+            {
+                Servo_SetAngleWithConfig(&hi2c1, &servo1201MG, angle);
+            }
+
             response.cmd_type = UART_CMD_ACK;
             response.data = frame->data;
             UART_SendResponse(&response);
@@ -42,7 +51,7 @@ void ProcessUARTFrame(UART_Frame_t *frame)
         if (frame->channel < MAX_SERVOS)
         {
             response.cmd_type = UART_CMD_ACK;
-            response.data = Servo_GetPosition(frame->channel);
+            response.data = Servo_GetCurrentAngle(frame->channel);
             UART_SendResponse(&response);
         }
         else
@@ -55,11 +64,15 @@ void ProcessUARTFrame(UART_Frame_t *frame)
     case UART_CMD_SET_PWM:
         if (frame->channel < MAX_SERVOS)
         {
-            uint16_t pulse = (frame->data * 4096) / 255;
-            PWM_SetChannel(frame->channel, pulse);
+            uint8_t duty = frame->data;
+
+            if (frame->channel == 1)
+                PWM_SetDutyCycle_CH1(duty);
+            else if (frame->channel == 2)
+                PWM_SetDutyCycle_CH2(duty);
             
             response.cmd_type = UART_CMD_ACK;
-            response.data = frame->data;
+            response.data = duty;
             UART_SendResponse(&response);
         }
         else
@@ -77,8 +90,8 @@ void ProcessUARTFrame(UART_Frame_t *frame)
         break;
 
     case UART_CMD_RESET:
-        // Reset serw
-        Servo_Init();
+        // Reset animacji
+        servoAnimation.active = 0;
         
         response.cmd_type = UART_CMD_ACK;
         response.data = 0x00;
