@@ -27,9 +27,23 @@ class MotorCortex:
         self._send_position(target)
         self.estimated_position = target
 
+    def read_position(self):
+        """Reads actual position from STM32"""
+        try:
+            pan = self.spi.read_servo_position(0)
+            tilt = self.spi.read_servo_position(1)
+            # pan and tilt are -1.0 to 1.0. Convert to degrees
+            pan_deg = pan * 90.0
+            tilt_deg = tilt * 90.0
+            self.actual_position = np.array([pan_deg, tilt_deg])
+            return self.actual_position
+        except Exception as e:
+            print(f"❌ Error reading position: {e}")
+            return self.actual_position
+
     def reset(self):
         """Move to home position (0, 0)."""
-        self.execute(np.array([0.0, 0.0]) - self.estimated_position)
+        self.execute(np.array([0.0, 0.0]))
 
     def _clamp(self, position):
         return np.array(
@@ -52,3 +66,9 @@ class MotorCortex:
         pan_byte = self._degrees_to_byte(position_degrees[0])
         tilt_byte = self._degrees_to_byte(position_degrees[1])
         print(f"Sending position: {position_degrees} -> {pan_byte}, {tilt_byte}")
+
+        try:
+            self.spi.set_servo_position(0, pan_byte)
+            self.spi.set_servo_position(1, tilt_byte)
+        except Exception as e:
+            print(f"❌ Error setting position: {e}")

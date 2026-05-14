@@ -57,13 +57,53 @@ class SPIConnection:
             print(f"Error receiving data: {e}")
             return [0x00] * num_bytes
 
-    # def send_frame(self, cmd_type, channel, data):
-    #     start_byte = self.START_BYTE
-    #     checksum = self._calculate_checksum(start_byte, cmd_type, channel, data)
-    #     frame = [start_byte, cmd_type, channel, data, checksum]
-    #     response = self.send(frame)
-    #     time.sleep(0.05)
-    #     return response
+    def set_servo_position(self, channel, byte_value):
+        """
+        Set servo position on STM32.
+
+        Args:
+            channel: 0 (head) or 1 (eye)
+            byte_value: 0-255 position
+        """
+        request = [
+            self.START_BYTE,
+            self.CMD_SET_POSITION,
+            channel,
+            byte_value,
+            self._calculate_checksum(
+                self.START_BYTE, self.CMD_SET_POSITION, channel, byte_value
+            ),
+        ]
+
+        # Phase 1: Send request
+        try:
+            self.spi.xfer2(request)
+        except Exception as e:
+            print(f"Error sending request: {e}")
+            raise
+
+        # Wait for STM32 to process
+        time.sleep(0.03)
+
+        # Phase 2: Send dummy bytes
+        dummy = [0x00] * 5
+        try:
+            self.spi.xfer2(dummy)
+        except Exception as e:
+            print(f"Error in phase 2: {e}")
+            raise
+
+        # Small delay
+        time.sleep(0.03)
+
+        # Phase 3: Send dummy bytes AGAIN (NOW we get the real response!)
+        try:
+            response = self.spi.xfer2(dummy)
+        except Exception as e:
+            print(f"Error receiving response: {e}")
+            raise
+
+        return response
 
     def read_servo_position(self, channel):
         """
