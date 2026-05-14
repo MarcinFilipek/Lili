@@ -74,15 +74,7 @@ void SPI_Init(void)
     HAL_NVIC_SetPriority(SPI1_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(SPI1_IRQn);
 
-    // Ręczna konfiguracja EXTI dla pinu PA4 (NSS) - zbocze narastające
-    // EXTI na pinie CS gwarantuje, że STM32 powróci do nasłuchiwania na początek bufora 
-    // nawet jeśli Master zdesynchronizuje transmisję.
-    SYSCFG->EXTICR[1] &= ~(0x000F); // Mapuj PA4 do EXTI4
-    EXTI->IMR |= (1 << 4);          // Odmaskuj przerwanie EXTI4
-    EXTI->RTSR |= (1 << 4);         // Przerwanie na zboczu narastającym (Rising Trigger)
-
-    HAL_NVIC_SetPriority(EXTI4_15_IRQn, 1, 0);
-    HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
+    // EXTI usunięte - powodowało race condition z odbiorem ostatniego bajtu (CS szedł w górę szybciej niż flaga RXNE).
 
     // Rozpocznij ciągłą komunikację full-duplex (5 bajtów)
     HAL_SPI_TransmitReceive_IT(&hspi1, 
@@ -176,25 +168,4 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
     }
 }
 
-// Obsługa przerwania EXTI dla pinu CS (PA4)
-void EXTI4_15_IRQHandler(void)
-{
-    // Jeśli przerwanie przyszło z linii 4 (PA4)
-    if(EXTI->PR & (1 << 4))
-    {
-        // Wyczyść flagę przerwania
-        EXTI->PR = (1 << 4);
-        
-        // CS (NSS) poszedł do góry - to koniec ramki wyznaczony przez Mastera.
-        // Sprawdzamy, czy ramka została ucięta w połowie (rozjechanie synchronizacji).
-        // RxXferCount < 5 i > 0 oznacza, że brakowało nam bajtów do pełnej ramki.
-        if (hspi1.State == HAL_SPI_STATE_BUSY_TX_RX && hspi1.RxXferCount > 0 && hspi1.RxXferCount < 5)
-        {
-            HAL_SPI_Abort_IT(&hspi1);
-            HAL_SPI_TransmitReceive_IT(&hspi1, 
-                                       (uint8_t*)spi_tx_frame, 
-                                       (uint8_t*)spi_rx_frame, 
-                                       5);
-        }
-    }
-}
+
