@@ -81,7 +81,7 @@ void SPI_Init(void)
     EXTI->IMR |= (1 << 4);          // Odmaskuj przerwanie EXTI4
     EXTI->RTSR |= (1 << 4);         // Przerwanie na zboczu narastającym (Rising Trigger)
 
-    HAL_NVIC_SetPriority(EXTI4_15_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(EXTI4_15_IRQn, 1, 0);
     HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
 
     // Rozpocznij ciągłą komunikację full-duplex (5 bajtów)
@@ -162,6 +162,20 @@ void SPI1_IRQHandler(void)
     HAL_SPI_IRQHandler(&hspi1);
 }
 
+// Callback błędu SPI (np. Overrun - OVR)
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
+{
+    if (hspi->Instance == SPI1)
+    {
+        // Jeśli wystąpił błąd, musimy odzyskać komunikację
+        HAL_SPI_Abort_IT(&hspi1);
+        HAL_SPI_TransmitReceive_IT(&hspi1, 
+                                   (uint8_t*)spi_tx_frame, 
+                                   (uint8_t*)spi_rx_frame, 
+                                   5);
+    }
+}
+
 // Obsługa przerwania EXTI dla pinu CS (PA4)
 void EXTI4_15_IRQHandler(void)
 {
@@ -172,13 +186,15 @@ void EXTI4_15_IRQHandler(void)
         EXTI->PR = (1 << 4);
         
         // CS (NSS) poszedł do góry - to koniec ramki wyznaczony przez Mastera.
-        // Niezależnie od stanu automatu HAL, wymuszamy reset, aby przy
-        // następnym opuszczeniu CS zacząć od bajtu nr 0.
-        HAL_SPI_Abort_IT(&hspi1);
-        
-        HAL_SPI_TransmitReceive_IT(&hspi1, 
-                                   (uint8_t*)spi_tx_frame, 
-                                   (uint8_t*)spi_rx_frame, 
-                                   5);
+        // Sprawdzamy, czy ramka została ucięta w połowie (rozjechanie synchronizacji).
+        // RxXferCount < 5 i > 0 oznacza, że brakowało nam bajtów do pełnej ramki.
+        if (hspi1.State == HAL_SPI_STATE_BUSY_TX_RX && hspi1.RxXferCount > 0 && hspi1.RxXferCount < 5)
+        {
+            HAL_SPI_Abort_IT(&hspi1);
+            HAL_SPI_TransmitReceive_IT(&hspi1, 
+                                       (uint8_t*)spi_tx_frame, 
+                                       (uint8_t*)spi_rx_frame, 
+                                       5);
+        }
     }
 }
