@@ -3,7 +3,7 @@ extern "C"
 #include "stm32f0xx_hal.h"
 #include "system_config.h"
 #include "pwm_driver.h"
-#include "spi_comm.h"
+#include "uart_comm.h"
 #include "servo_control.h"
 #include "pca9685.h"
 }
@@ -14,90 +14,83 @@ ServoConfig_t servoSG5010, servo1201MG;
 // Animacja serwa
 ServoAnimation_t servoAnimation;
 
-// Funkcja obsługi ramek SPI
-void ProcessSPIFrame(SPI_Frame_t *frame)
+// Funkcja obsługi ramek UART
+void ProcessUARTFrame(UART_Frame_t *frame)
 {
-    SPI_Frame_t response;
+    UART_Frame_t response;
     response.channel = frame->channel;
+    response.data = 0; // Default data
 
     switch (frame->cmd_type)
     {
-    case SPI_CMD_SET_SERVO:
-    {
-        uint8_t angle = frame->data;
-
-        // Najpierw przygotuj ACK - zanim I2C zablokuje pętlę
-        response.cmd_type = SPI_CMD_ACK;
-        response.data = angle;
-        SPI_PrepareResponse(&response);
-
-        // Potem wykonaj I2C (blokujące, ale ACK już w buforze TX)
-        if (frame->channel == 1)
+    case UART_CMD_SET_SERVO:
+        if (frame->channel < MAX_SERVOS)
         {
-            Servo_SetAngleWithConfig(&hi2c1, &servoSG5010, angle);
+            Servo_SetPosition(frame->channel, frame->data);
+            response.cmd_type = UART_CMD_ACK;
+            response.data = frame->data;
+            UART_SendResponse(&response);
         }
-        else if (frame->channel == 0)
+        else
         {
-            Servo_SetAngleWithConfig(&hi2c1, &servo1201MG, angle);
+            response.cmd_type = UART_CMD_NACK;
+            UART_SendResponse(&response);
         }
         break;
-    }
 
-    case SPI_CMD_GET_SERVO:
-    {
-        // Odczytaj aktualny kąt serwa
-        uint8_t current_angle = Servo_GetCurrentAngle(frame->channel);
-
-        response.cmd_type = SPI_CMD_ACK;
-        response.data = current_angle;
-        SPI_PrepareResponse(&response);
+    case UART_CMD_GET_SERVO:
+        if (frame->channel < MAX_SERVOS)
+        {
+            response.cmd_type = UART_CMD_ACK;
+            response.data = Servo_GetPosition(frame->channel);
+            UART_SendResponse(&response);
+        }
+        else
+        {
+            response.cmd_type = UART_CMD_NACK;
+            UART_SendResponse(&response);
+        }
         break;
-    }
 
-    case SPI_CMD_SET_PWM:
-    {
-        // Ustaw PWM
-        uint8_t duty = frame->data;
-
-        if (frame->channel == 1)
-            PWM_SetDutyCycle_CH1(duty);
-        else if (frame->channel == 2)
-            PWM_SetDutyCycle_CH2(duty);
-
-        response.cmd_type = SPI_CMD_ACK;
-        response.data = duty;
-        SPI_PrepareResponse(&response);
+    case UART_CMD_SET_PWM:
+        if (frame->channel < MAX_SERVOS)
+        {
+            uint16_t pulse = (frame->data * 4096) / 255;
+            PWM_SetChannel(frame->channel, pulse);
+            
+            response.cmd_type = UART_CMD_ACK;
+            response.data = frame->data;
+            UART_SendResponse(&response);
+        }
+        else
+        {
+            response.cmd_type = UART_CMD_NACK;
+            UART_SendResponse(&response);
+        }
         break;
-    }
 
-    case SPI_CMD_PING:
-    {
-        // Test połączenia
-        response.cmd_type = SPI_CMD_ACK;
-        response.data = 0x55; // Signature
-        SPI_PrepareResponse(&response);
+    case UART_CMD_PING:
+        // Prosty test połączenia
+        response.cmd_type = UART_CMD_ACK;
+        response.data = 0x55;
+        UART_SendResponse(&response);
         break;
-    }
 
-    case SPI_CMD_RESET:
-    {
-        // Reset animacji
-        servoAnimation.active = 0;
-
-        response.cmd_type = SPI_CMD_ACK;
+    case UART_CMD_RESET:
+        // Reset serw
+        Servo_Init();
+        
+        response.cmd_type = UART_CMD_ACK;
         response.data = 0x00;
-        SPI_PrepareResponse(&response);
+        UART_SendResponse(&response);
         break;
-    }
 
     default:
-    {
         // Nieznana komenda
-        response.cmd_type = SPI_CMD_NACK;
-        response.data = 0xFF;
-        SPI_PrepareResponse(&response);
+        response.cmd_type = UART_CMD_NACK;
+        response.data = 0x00;
+        UART_SendResponse(&response);
         break;
-    }
     }
 }
 
@@ -120,6 +113,7 @@ int main()
     PWM_Init();
     System_I2C_Init();
     System_GPIO_Init();
+    UART_Init();
 
     // Sprawdź czy PCA9685 odpowiada
     HAL_Delay(100);
@@ -136,15 +130,9 @@ int main()
     Servo_Init(&hi2c1, &servoSG5010, 90);
     Servo_Init(&hi2c1, &servo1201MG, 90);
 
-    // Inicjalizacja SPI
-    SPI_Init();
-
     // Ustaw początkowe wartości PWM
     PWM_SetDutyCycle_CH1(50); // 50% na kanale 1 (PB4)
     PWM_SetDutyCycle_CH2(75); // 75% na kanale 2 (PB5)
-
-    // Uruchom animację serw
-    // Servo_StartSweep(&servoAnimation, 180, 0, 1);
 
     // Główna pętla aplikacji
     while (1)
@@ -153,25 +141,14 @@ int main()
         HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
         HAL_Delay(25);
 
-        // Aktualizacja animacji serw (można wyłączyć przez SPI)
-        // if (servoAnimation.active)
-        // {
-        //     uint8_t servo_angle = Servo_UpdateSweep(&servoAnimation);
-        //     Servo_SetAngleWithConfig(&hi2c1, &servoSG5010, servo_angle);
-        //     Servo_SetAngleWithConfig(&hi2c1, &servo1201MG, servo_angle);
-        // }
-
-        // Obsługa ramek SPI - drainuj kolejkę komend
-        SPI_Frame_t cmd_frame;
-        if (SPI_Queue_Pop(&cmd_frame))
+        // Obsługa ramek UART
+        UART_Frame_t cmd_frame;
+        if (UART_Queue_Pop(&cmd_frame))
         {
-            ProcessSPIFrame(&cmd_frame);
+            ProcessUARTFrame(&cmd_frame);
         }
     }
-}
 
-// import spidev
-// import time
 
 // spi = spidev.SpiDev()
 // spi.open(0, 0)  # Bus 0, Device 0
