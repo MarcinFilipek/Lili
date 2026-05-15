@@ -1,5 +1,5 @@
 import numpy as np
-from spi_connection import SPIConnection
+from uart_connection import UARTConnection
 
 
 PAN_MIN = -90.0
@@ -10,7 +10,7 @@ TILT_MAX = 90.0
 
 class MotorCortex:
     def __init__(self):
-        self.spi = SPIConnection()
+        self.uart = UARTConnection()
 
         self.last_delta = np.array([0.0, 0.0])
 
@@ -30,8 +30,8 @@ class MotorCortex:
     def read_position(self):
         """Reads actual position from STM32"""
         try:
-            pan = self.spi.read_servo_position(0)
-            tilt = self.spi.read_servo_position(1)
+            pan = self.uart.read_servo_position(0)
+            tilt = self.uart.read_servo_position(1)
             # pan and tilt are -1.0 to 1.0. Convert to degrees
             pan_deg = pan * 90.0
             tilt_deg = tilt * 90.0
@@ -68,7 +68,7 @@ class MotorCortex:
         print(f"Sending position: {position_degrees} -> {pan_byte}, {tilt_byte}")
 
         try:
-            self.spi.set_servo_position(0, pan_byte)
-            self.spi.set_servo_position(1, tilt_byte)
+            self.uart.set_servo_position(0, pan_byte)
+            self.uart.set_servo_position(1, tilt_byte)
         except Exception as e:
             print(f"❌ Error setting position: {e}")

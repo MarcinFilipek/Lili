@@ -5,7 +5,7 @@ import sys
 # Otwórz port szeregowy
 # Domyślny sprzętowy port na RPi to /dev/serial0 (lub /dev/ttyAMA0 / /dev/ttyS0)
 try:
-    ser = serial.Serial('/dev/serial0', 115200, timeout=0.1)
+    ser = serial.Serial('/dev/ttyAMA0', 115200, timeout=0.1)
 except Exception as e:
     print(f"❌ Nie udało się otworzyć portu UART: {e}")
     print("💡 Upewnij się, że port szeregowy jest włączony w raspi-config!")

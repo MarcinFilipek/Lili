@@ -27,13 +27,15 @@ void ProcessUARTFrame(UART_Frame_t *frame)
         if (frame->channel < MAX_SERVOS)
         {
             uint8_t angle = frame->data;
+            uint8_t servo_angle = (uint8_t)((uint16_t)angle * 180 / 255);
+
             if (frame->channel == 1)
             {
-                Servo_SetAngleWithConfig(&hi2c1, &servoSG5010, angle);
+                Servo_SetAngleWithConfig(&hi2c1, &servoSG5010, servo_angle);
             }
             else if (frame->channel == 0)
             {
-                Servo_SetAngleWithConfig(&hi2c1, &servo1201MG, angle);
+                Servo_SetAngleWithConfig(&hi2c1, &servo1201MG, servo_angle);
             }
 
             response.cmd_type = UART_CMD_ACK;
