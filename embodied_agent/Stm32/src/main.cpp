@@ -27,15 +27,14 @@ void ProcessUARTFrame(UART_Frame_t *frame)
         if (frame->channel < MAX_SERVOS)
         {
             uint8_t angle = frame->data;
-            uint8_t servo_angle = (uint8_t)((uint16_t)angle * 180 / 255);
 
             if (frame->channel == 1)
             {
-                Servo_SetAngleWithConfig(&hi2c1, &servoSG5010, servo_angle);
+                Servo_SetAngleWithConfig(&hi2c1, &servoSG5010, angle);
             }
             else if (frame->channel == 0)
             {
-                Servo_SetAngleWithConfig(&hi2c1, &servo1201MG, servo_angle);
+                Servo_SetAngleWithConfig(&hi2c1, &servo1201MG, angle);
             }
 
             response.cmd_type = UART_CMD_ACK;
@@ -72,7 +71,7 @@ void ProcessUARTFrame(UART_Frame_t *frame)
                 PWM_SetDutyCycle_CH1(duty);
             else if (frame->channel == 2)
                 PWM_SetDutyCycle_CH2(duty);
-            
+
             response.cmd_type = UART_CMD_ACK;
             response.data = duty;
             UART_SendResponse(&response);
@@ -94,7 +93,7 @@ void ProcessUARTFrame(UART_Frame_t *frame)
     case UART_CMD_RESET:
         // Reset animacji
         servoAnimation.active = 0;
-        
+
         response.cmd_type = UART_CMD_ACK;
         response.data = 0x00;
         UART_SendResponse(&response);
@@ -164,27 +163,26 @@ int main()
         }
     }
 
+    // spi = spidev.SpiDev()
+    // spi.open(0, 0)  # Bus 0, Device 0
+    // spi.max_speed_hz = 1000000
 
-// spi = spidev.SpiDev()
-// spi.open(0, 0)  # Bus 0, Device 0
-// spi.max_speed_hz = 1000000
+    // def calculate_checksum(start, cmd, channel, data):
+    //     return start ^ cmd ^ channel ^ data
 
-// def calculate_checksum(start, cmd, channel, data):
-//     return start ^ cmd ^ channel ^ data
+    // def send_frame(cmd_type, channel, data):
+    //     start_byte = 0xAA
+    //     checksum = calculate_checksum(start_byte, cmd_type, channel, data)
+    //     frame = [start_byte, cmd_type, channel, data, checksum]
+    //     response = spi.xfer2(frame)
+    //     time.sleep(0.01)
+    //     return response
 
-// def send_frame(cmd_type, channel, data):
-//     start_byte = 0xAA
-//     checksum = calculate_checksum(start_byte, cmd_type, channel, data)
-//     frame = [start_byte, cmd_type, channel, data, checksum]
-//     response = spi.xfer2(frame)
-//     time.sleep(0.01)
-//     return response
+    // # Ustaw servo 0 na 90 stopni
+    // send_frame(0x01, 0, 90)
 
-// # Ustaw servo 0 na 90 stopni
-// send_frame(0x01, 0, 90)
+    // # Odczytaj pozycję servo 0
+    // response = send_frame(0x02, 0, 0x00)
 
-// # Odczytaj pozycję servo 0
-// response = send_frame(0x02, 0, 0x00)
-
-// # Test połączenia
-// send_frame(0x05, 0, 0x00)
+    // # Test połączenia
+    // send_frame(0x05, 0, 0x00)
