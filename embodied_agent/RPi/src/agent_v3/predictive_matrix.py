@@ -47,50 +47,40 @@ class PredictiveMatrix:
         return prediction
 
     def update(self, sequences, learning_rate=0.01):
-        """
-        Hebbian learning from sequences.
-        Strengthens associations: feature_t → action → feature_t+1
-
-        Args:
-            sequences: list of dicts
-                [{'feature_t': array, 'action': array, 'feature_t1': array}, ...]
-            learning_rate: float
-
-        Returns:
-            avg_error: float (average prediction error across sequences)
-        """
         if len(sequences) == 0:
             return 0.0
 
         total_error = 0.0
 
         for seq in sequences:
-            f_t = seq["feature_t"]  # current feature
-            a = seq["action"]  # action taken
-            f_t1 = seq["feature_t1"]  # next feature (target)
+            f_t  = seq["feature_t"]
+            a    = seq["action"]
+            f_t1 = seq["feature_t1"]
 
-            # Current prediction
+            # Aktualna predykcja
             prediction = self.predict(f_t, a)
 
-            # Prediction error
-            error = np.mean((prediction - f_t1) ** 2)
-            total_error += error
+            # Błąd predykcji
+            error_vec = prediction - f_t1
+            mse = np.mean(error_vec ** 2)
+            total_error += mse
 
-            # Hebbian update: strengthen the 3-way association
-            # ΔW[i,j,k] = lr * f_t[i] * a[j] * f_t1[k]
-            # Equivalent to the outer product of three vectors (vectorised)
-            self.W += learning_rate * np.einsum("i,j,k->ijk", f_t, a, f_t1)
+            # Hebbian z korektą błędu (delta rule):
+            # zamiast wzmacniać f_t1 bezwarunkowo,
+            # wzmacniamy proporcjonalnie do błędu
+            self.W -= learning_rate * np.einsum("i,j,k->ijk", f_t, a, error_vec)
+
+        # Weight decay — zapobiega eksplozji wag
+        self.W *= 0.999
 
         avg_error = total_error / len(sequences)
-
-        # Track statistics
         self.total_updates += len(sequences)
         self.recent_errors.append(avg_error)
         if len(self.recent_errors) > 10:
             self.recent_errors.pop(0)
 
         return avg_error
-
+    
     def get_stats(self):
         """Get learning statistics (for debugging)"""
         return {

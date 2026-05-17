@@ -30,20 +30,20 @@ class MotorCortex:
     def read_position(self):
         """Reads actual position from STM32"""
         try:
-            pan = self.uart.read_servo_position(0)
+            pan  = self.uart.read_servo_position(0)  # już w stopniach [-90, 90]
             tilt = self.uart.read_servo_position(1)
-            # pan and tilt are -1.0 to 1.0. Convert to degrees
-            pan_deg = pan * 90.0
-            tilt_deg = tilt * 90.0
-            self.actual_position = np.array([pan_deg, tilt_deg])
+            self.actual_position = np.array([pan, tilt])
             return self.actual_position
         except Exception as e:
             print(f"❌ Error reading position: {e}")
             return self.actual_position
 
     def reset(self):
-        """Move to home position (0, 0)."""
-        self.execute(np.array([0.0, 0.0]))
+        """Move to physical center (0°, 0°) regardless of current state."""
+        center = np.array([0.0, 0.0])
+        self._send_position(center)
+        self.estimated_position = center
+        self.actual_position = center
 
     def _clamp(self, position):
         return np.array(
@@ -54,9 +54,8 @@ class MotorCortex:
         )
 
     def _degrees_to_byte(self, degrees):
-        """Map [-90, 90] → [0, 255]"""
-        normalized = (degrees + 90.0) / 180.0  # [0, 1]
-        return int(np.clip(normalized * 255, 0, 255))
+        # [-90, 90] → [0, 180] — STM32 oczekuje stopni bezpośrednio
+        return int(np.clip(degrees + 90.0, 0, 180))
 
     def _send_position(self, position_degrees):
         """

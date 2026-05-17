@@ -17,10 +17,8 @@ class UARTConnection:
         return start ^ cmd ^ channel ^ data
 
     def _map_from_byte(self, byte_value):
-        """
-        Convert byte (0-255) to position (-1 to 1).
-        """
-        return (byte_value / 127.5) - 1.0
+        # STM32 zwraca [0, 180]° → [-90, 90]°
+        return float(byte_value) - 90.0
 
     def set_servo_position(self, channel, byte_value):
         """

@@ -68,7 +68,7 @@ class AgentV3:
                 sequences = self.hippocampus.extract_sequences()
 
                 print(f"    Consolidating {len(sequences.get('brightness', []))} sequences...")
-                self.predictive_system.consolidate(sequences, lr=self.consolidation_lr)
+                self.predictive_system.consolidate(sequences, learning_rate=self.consolidation_lr)
 
                 self.hippocampus.wake_up()
                 self.frustration = 0.0
