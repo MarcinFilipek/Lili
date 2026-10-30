@@ -1,111 +1,62 @@
-# Raspberry Pi Embodied Agent Project
+# Lili — RPi
 
-Projekt zawierający kod do komunikacji SPI oraz obsługi kamery na Raspberry Pi 5.
+Kod agenta na Raspberry Pi 5. Sterowanie serwami przez STM32 (UART) i kamera Picamera2.
+Poprzednia wersja (agent v1–v3): tag `rpi-v3-final`.
 
-## Struktura projektu
+## Struktura
 
 ```
-embodied_agent/RPi/
-├── venv/                 # Wirtualne środowisko Python (nie w repo)
-├── src/                  # Kod źródłowy
-│   ├── SpiTest.py       # Test komunikacji SPI
-│   └── CameraTest.py    # Test kamery Picamera2
-├── tests/               # Testy jednostkowe
-├── config/              # Pliki konfiguracyjne
-├── requirements.txt     # Zależności Python
-└── README.md           # Ten plik
+RPi/
+├── src/lili/
+│   ├── stm_link/      # komunikacja z STM32 (protokół: ../doc/protocol.md)
+│   └── camera.py      # Picamera2
+├── tools/             # skrypty sprzętowe (stres-test UART, podgląd kamery)
+└── tests/             # testy bez sprzętu (fałszywy port szeregowy)
 ```
 
-## Instalacja
-
-### 1. Aktywacja wirtualnego środowiska
+## Instalacja na RPi
 
 ```bash
+sudo apt install -y python3-picamera2 python3-opencv
 cd embodied_agent/RPi
+python3 -m venv --system-site-packages venv   # picamera2 jest z apt
 source venv/bin/activate
+pip install -e ".[dev]"
 ```
 
-### 2. Instalacja zależności
+UART: `sudo raspi-config` → Interface Options → Serial Port
+- login shell przez serial: **No**
+- serial port hardware: **Yes**
+
+Uprawnienia: `sudo usermod -a -G dialout,video $USER`
+
+## Instalacja lokalnie (Mac, bez sprzętu)
 
 ```bash
-pip install -r requirements.txt
-```
-
-**Uwaga:** Na Raspberry Pi może być konieczne zainstalowanie dodatkowych pakietów systemowych:
-
-```bash
-# Dla picamera2
-sudo apt update
-sudo apt install -y python3-picamera2
-
-# Dla OpenCV
-sudo apt install -y python3-opencv libopencv-dev
+python3 -m venv venv && source venv/bin/activate
+pip install -e ".[dev]"
+pytest
 ```
 
 ## Użycie
 
-### SPI Test
+```python
+from lili.stm_link import StmLink, CHANNEL_PAN
 
-Test komunikacji SPI - wysyłanie wartości 'A' lub 'B':
+with StmLink() as link:
+    link.set_position(CHANNEL_PAN, 30.0)
+    print(link.get_position(CHANNEL_PAN))
+```
 
 ```bash
-python src/SpiTest.py
+python tools/uart_stress.py -n 100   # stres-test UART
+python tools/camera_preview.py       # podgląd kamery, 'q' kończy
 ```
 
-**Wymagane połączenia (Raspberry Pi 5):**
-- MOSI → GPIO 10 (Pin 19)
-- MISO → GPIO 9 (Pin 21)
-- SCLK → GPIO 11 (Pin 23)
-- CE0 → GPIO 8 (Pin 24)
-- GND → Ground
+## Połączenia RPi 5 ↔ STM32
 
-### Camera Test
-
-Test kamery Picamera2 z podglądem OpenCV:
-
-```bash
-python src/CameraTest.py
-```
-
-Naciśnij `q`, aby zakończyć podgląd.
-
-## Konfiguracja SPI na Raspberry Pi 5
-
-Upewnij się, że SPI jest włączony:
-
-```bash
-sudo raspi-config
-# Interface Options → SPI → Enable
-```
-
-Lub edytuj `/boot/config.txt`:
-
-```
-dtparam=spi=on
-```
-
-Następnie zrestartuj:
-
-```bash
-sudo reboot
-```
-
-## Deaktywacja środowiska
-
-```bash
-deactivate
-```
-
-## Wymagania sprzętowe
-
-- Raspberry Pi 5 (lub nowszy)
-- Picamera2 kompatybilna kamera
-- Urządzenie SPI slave (opcjonalne dla testów)
-
-## Notatki
-
-- **SPI bez slave:** Jeśli nie ma podłączonego urządzenia slave, `SpiTest.py` będzie odbierać wartości z pływającej linii MISO (zazwyczaj 0x00 lub 0xFF)
-- **Uprawnienia:** Może być wymagane dodanie użytkownika do grupy `spi` i `video`:
-  ```bash
-  sudo usermod -a -G spi,video $USER
-  ```
+| RPi | STM32 |
+|---|---|
+| GPIO 14 TXD (pin 8) | PA10 RX (D0) |
+| GPIO 15 RXD (pin 10) | PA9 TX (D1) |
+| GND | GND |

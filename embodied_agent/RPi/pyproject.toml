@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lili"
+version = "0.4.0"
+requires-python = ">=3.11"
+dependencies = [
+    "pyserial>=3.5",
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+# Na RPi picamera2 i opencv z apt (python3-picamera2, python3-opencv)
+dev = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

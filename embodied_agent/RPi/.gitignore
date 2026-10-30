@@ -30,3 +30,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 temp/
+
+# Packaging
+*.egg-info/
+.pytest_cache/
