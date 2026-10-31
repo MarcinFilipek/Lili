@@ -136,7 +136,10 @@ data/sessions/<YYYYMMDD-HHMMSS>_<etykieta>/
 Zdarzenia w `state.jsonl` (wszystkie z `t` w ns):
 - `cmd`: wysłana komenda (pan/tilt w stopniach i bajtach, później napęd),
 - `stm`: odpowiedź STM32 (potwierdzony kąt),
-- `phase`: znacznik fazy ruch-stop-patrz (`move`, `settle`, `look`).
+- `phase`: znacznik fazy ruch-stop-patrz (`move`, `settle`, `look`; `end` zamyka ostatni `look`).
+
+Klatki: 320×240, szarość (kanał Y z YUV420), 30 fps, nagrywane ciągle przez całą sesję,
+także w trakcie ruchu (przydatne do kalibracji czasu dojazdu serw).
 
 Ustalenia:
 - Klatki bez kompresji stratnej (kompresja wideo psuje przepływ optyczny).

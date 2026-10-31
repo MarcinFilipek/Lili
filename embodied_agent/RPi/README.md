@@ -66,6 +66,16 @@ python tools/uart_stress.py -n 100   # stres-test UART
 python tools/camera_preview.py       # podgląd kamery, 'q' kończy
 ```
 
+### Nagrywanie sesji (RPi)
+
+```bash
+python tools/record_session.py kubek_na_stole                  # peering ±10°, 3 cykle
+python tools/record_session.py kubek --amplitude 15 --settle 0.8
+python tools/session_info.py                                   # podsumowanie najnowszej sesji
+```
+
+Sesje trafiają do `data/sessions/<data>_<etykieta>/`, format w [../doc/v4_design.md](../doc/v4_design.md).
+
 ## Połączenia RPi 5 ↔ STM32
 
 | RPi | STM32 |
