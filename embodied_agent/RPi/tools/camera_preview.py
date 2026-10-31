@@ -2,7 +2,7 @@
 
 import cv2
 
-from lili.camera import Camera
+from lili.hw.camera import Camera
 
 
 def main():

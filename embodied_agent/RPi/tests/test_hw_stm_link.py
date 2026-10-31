@@ -1,7 +1,7 @@
 import pytest
 
-from lili.stm_link import StmLink, ProtocolError
-from lili.stm_link import protocol as p
+from lili.hw.stm_link import StmLink, ProtocolError
+from lili.hw.stm_link import protocol as p
 
 
 class FakeSerial:

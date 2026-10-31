@@ -2,7 +2,7 @@
 
 import argparse
 
-from lili.stm_link import CHANNEL_PAN, CHANNEL_TILT, ProtocolError, StmLink
+from lili.hw.stm_link import CHANNEL_PAN, CHANNEL_TILT, ProtocolError, StmLink
 
 TARGETS = {CHANNEL_PAN: -40.0, CHANNEL_TILT: -30.0}
 

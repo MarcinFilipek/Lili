@@ -1,17 +1,30 @@
 # Lili — RPi
 
-Kod agenta na Raspberry Pi 5. Sterowanie serwami przez STM32 (UART) i kamera Picamera2.
-Poprzednia wersja (agent v1–v3): tag `rpi-v3-final`.
+Kod agenta Lili v4 na Raspberry Pi 5. Projekt: [../doc/v4_design.md](../doc/v4_design.md).
+Poprzednia wersja (agent v1–v3): tagi `rpi-v3-final`, `rpi-v3-latest`.
 
 ## Struktura
 
 ```
 RPi/
 ├── src/lili/
-│   ├── stm_link/      # komunikacja z STM32 (protokół: ../doc/protocol.md)
-│   └── camera.py      # Picamera2
-├── tools/             # skrypty sprzętowe (stres-test UART, podgląd kamery)
-└── tests/             # testy bez sprzętu (fałszywy port szeregowy)
+│   ├── hw/            # jedyne miejsce dotykające sprzętu
+│   │   ├── stm_link/  # komunikacja z STM32 (protokół: ../doc/protocol.md)
+│   │   └── camera.py  # Picamera2
+│   ├── body/          # model ciała: geometria, kamera, serwa, kopia eferentna
+│   ├── record/        # zapis i odczyt sesji
+│   ├── motor/         # programy ruchu (peering, ruch-stop-patrz)
+│   └── perception/    # przepływ, derotacja, paralaksa, krawędzie zasłaniania
+├── tools/             # skrypty CLI
+├── calib/             # wyniki kalibracji
+├── data/              # nagrania sesji (poza repo)
+└── tests/             # testy bez sprzętu
+```
+
+Nagrania z RPi na Maca:
+
+```bash
+rsync -av uzume@raspberrypi:~/Documents/PythonWorkspace/AudioAgent/embodied_agent/RPi/data/ data/
 ```
 
 ## Instalacja na RPi
@@ -41,7 +54,7 @@ pytest
 ## Użycie
 
 ```python
-from lili.stm_link import StmLink, CHANNEL_PAN
+from lili.hw.stm_link import StmLink, CHANNEL_PAN
 
 with StmLink() as link:
     link.set_position(CHANNEL_PAN, 30.0)

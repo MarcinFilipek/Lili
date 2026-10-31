@@ -21,11 +21,8 @@ Thumbs.db
 # Logs
 *.log
 
-# Data files
-*.csv
-*.json
-*.pkl
-*.npy
+# Nagrania sesji (pobierane z RPi, nie w repo)
+data/
 
 # Temporary files
 *.tmp
