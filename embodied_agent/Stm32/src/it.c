@@ -6,4 +6,4 @@ void SysTick_Handler(void)
     HAL_SYSTICK_IRQHandler();
 }
 
-// Obsługa przerwania SPI1 została przeniesiona do spi_comm.c
+// USART1_IRQHandler jest w uart_comm.c
