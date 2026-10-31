@@ -10,17 +10,21 @@ class Camera:
 
     gray=True: kanał Y (luminancja) z YUV420, bez konwersji kolorów.
     gray=False: format "RGB888", który w picamera2 daje w pamięci kolejność BGR (zgodną z OpenCV).
+    rotate180=True: kamera jest zamontowana do góry nogami, obrót robi ISP.
     """
 
-    def __init__(self, width=WIDTH, height=HEIGHT, gray=True, fps=FPS):
+    def __init__(self, width=WIDTH, height=HEIGHT, gray=True, fps=FPS, rotate180=True):
+        from libcamera import Transform
         from picamera2 import Picamera2
 
         self.width, self.height, self.gray, self.fps = width, height, gray, fps
+        self.rotate180 = rotate180
         self.cam = Picamera2()
         frame_us = int(1_000_000 / fps)
         conf = self.cam.create_video_configuration(
             main={"format": "YUV420" if gray else "RGB888", "size": (width, height)},
             controls={"FrameDurationLimits": (frame_us, frame_us)},
+            transform=Transform(hflip=rotate180, vflip=rotate180),
         )
         self.cam.configure(conf)
         self.cam.start()
@@ -64,6 +68,7 @@ class Camera:
             "height": self.height,
             "gray": self.gray,
             "fps": self.fps,
+            "rotate180": self.rotate180,
             "sensor": self.cam.camera_configuration().get("sensor"),
         }
 

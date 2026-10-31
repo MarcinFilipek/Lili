@@ -8,7 +8,7 @@ Poprzednie wersje: tagi `rpi-v3-final`, `rpi-v3-latest`.
 | Element | Opis |
 |---|---|
 | Komputer | Raspberry Pi 5 Model B Rev 1.1 |
-| Kamera | Pi Camera (ov5647), Picamera2 |
+| Kamera | Pi Camera (ov5647), Picamera2, zamontowana do góry nogami (obraz obracany o 180° w ISP) |
 | Głowa | serwa pan/tilt przez STM32 + PCA9685, protokół UART: [protocol.md](protocol.md) |
 | Napęd (później) | gąsienice L/R, sterownik Cytron MDD3A na STM32 (nowe komendy do dopisania w protocol.md) |
 
