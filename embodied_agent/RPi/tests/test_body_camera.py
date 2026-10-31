@@ -137,8 +137,12 @@ def test_camera_model_save_load(tmp_path):
 
 def test_camera_model_fov_and_scaling():
     model = CameraModel(320, 240, K_TRUE.copy(), np.zeros(5))
-    fov_h, _ = model.fov_deg()
-    assert fov_h == pytest.approx(2 * np.degrees(np.arctan(160 / 300)))
+    fov_h, fov_v = model.fov_deg()
+    assert fov_h == pytest.approx(np.degrees(np.arctan(158.5 / 300) + np.arctan(161.5 / 300)), abs=1e-3)
+    assert fov_v == pytest.approx(np.degrees(np.arctan(121.5 / 300) + np.arctan(118.5 / 300)), abs=1e-3)
+
+    barrel = CameraModel(320, 240, K_TRUE.copy(), np.array([-0.4, 0.2, 0, 0, 0]))
+    assert barrel.fov_deg()[0] > fov_h + 2
 
     half = model.scaled(160, 120)
     assert half.fx == pytest.approx(150)

@@ -3,6 +3,7 @@ import math
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import cv2
 import numpy as np
 
 
@@ -34,10 +35,18 @@ class CameraModel:
         return float(self.K[1, 2])
 
     def fov_deg(self):
-        """(poziomy, pionowy) kąt widzenia w stopniach."""
+        """(poziomy, pionowy) kąt widzenia w stopniach, z uwzględnieniem dystorsji.
+
+        Przy dystorsji beczkowatej brzegi kadru sięgają dalej, niż wynika z samej ogniskowej.
+        """
+        # Krawędzie kadru (środki pikseli są w liczbach całkowitych) na wysokości/szerokości środka optycznego
+        edges = np.array(
+            [[-0.5, self.cy], [self.width - 0.5, self.cy], [self.cx, -0.5], [self.cx, self.height - 0.5]]
+        )
+        rays = cv2.undistortPoints(edges.reshape(-1, 1, 2), self.K, self.dist).reshape(-1, 2)
         return (
-            math.degrees(2 * math.atan(self.width / (2 * self.fx))),
-            math.degrees(2 * math.atan(self.height / (2 * self.fy))),
+            math.degrees(math.atan(-rays[0, 0]) + math.atan(rays[1, 0])),
+            math.degrees(math.atan(-rays[2, 1]) + math.atan(rays[3, 1])),
         )
 
     def scaled(self, width, height):
