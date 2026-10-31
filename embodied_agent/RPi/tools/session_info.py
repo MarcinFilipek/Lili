@@ -28,13 +28,21 @@ def main():
     print(f"{session.path.name}  (kod {meta.get('code_version')}, schemat v{meta['schema_version']})")
     print(f"program: {meta.get('program')}")
 
-    t, _ = session.frame_times()
+    t, t_sensor = session.frame_times()
     print(f"klatki: {len(t)}, czas: {meta['duration_s']:.2f} s")
     if len(t) > 1:
-        dt_ms = np.diff(t) / 1e6
+        # Rytm klatek z zegara sensora, jeśli jest: czas RPi zależy od tego, kiedy klatkę odebraliśmy
+        has_sensor = bool(np.all(t_sensor > 0))
+        dt_ms = np.diff(t_sensor if has_sensor else t) / 1e6
         period = np.median(dt_ms)
-        dropped = int(np.sum(np.round(dt_ms / period) - 1))
-        print(f"FPS: {1000 / period:.1f}, odstęp maks.: {dt_ms.max():.1f} ms, zgubione klatki: ~{dropped}")
+        dropped = int(np.clip(np.round(dt_ms / period) - 1, 0, None).sum())
+        print(
+            f"FPS ({'sensor' if has_sensor else 'RPi'}): {1000 / period:.1f}, "
+            f"odstęp min./maks.: {dt_ms.min():.1f}/{dt_ms.max():.1f} ms, zgubione klatki: {dropped}"
+        )
+        if has_sensor:
+            delay_ms = (t - t_sensor) / 1e6
+            print(f"odbiór klatki po sensorze: mediana {np.median(delay_ms):.1f} ms, maks. {delay_ms.max():.1f} ms")
 
     events = session.events()
     print("zdarzenia:", dict(Counter(e["type"] for e in events)))

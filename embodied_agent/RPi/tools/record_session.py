@@ -16,7 +16,7 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "sessions"
 def code_version():
     try:
         result = subprocess.run(
-            ["git", "describe", "--always", "--dirty"],
+            ["git", "describe", "--always", "--dirty", "--exclude=*"],  # sam hash, bez nazw tagów
             capture_output=True, text=True, cwd=Path(__file__).parent,
         )
         return result.stdout.strip() or "unknown"

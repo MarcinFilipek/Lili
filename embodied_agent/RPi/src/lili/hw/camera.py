@@ -39,9 +39,10 @@ class Camera:
         return image, t, metadata.get("SensorTimestamp", 0)
 
     def lock_exposure(self, warmup_s=2.0):
-        """Po ustaleniu się automatyki zamraża ekspozycję i balans bieli. Zwraca ustawione wartości.
+        """Po ustaleniu się automatyki zamraża ekspozycję i balans bieli.
 
-        Zmiany jasności w trakcie sesji wyglądają dla przepływu optycznego jak ruch.
+        Zwraca ustawione wartości i rzeczywisty FrameDuration [µs], bo sensor nie trzyma
+        dokładnie zadanego fps. Zmiany jasności w trakcie sesji wyglądają dla przepływu jak ruch.
         """
         time.sleep(warmup_s)
         metadata = self.cam.capture_metadata()
@@ -54,7 +55,7 @@ class Camera:
         if "ColourGains" in metadata:
             controls["ColourGains"] = metadata["ColourGains"]
         self.cam.set_controls(controls)
-        return controls
+        return {**controls, "FrameDuration": metadata.get("FrameDuration")}
 
     def info(self):
         return {
