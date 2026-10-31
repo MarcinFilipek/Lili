@@ -45,6 +45,29 @@ def view_signature(corners, image_size, pattern=PATTERN):
     return np.array([cx / w, cy / h, (top + bottom) / (2 * w), *tilt])
 
 
+COVERAGE_NAMES = [
+    ["lewy górny", "górny środek", "prawy górny"],
+    ["lewy brzeg", "środek", "prawy brzeg"],
+    ["lewy dolny", "dolny środek", "prawy dolny"],
+]
+
+
+def coverage(corner_sets, image_size):
+    """Liczba narożników w każdej z 3x3 części kadru. Rogi kadru są potrzebne do wyznaczenia dystorsji."""
+    w, h = image_size
+    counts = np.zeros((3, 3), dtype=int)
+    for corners in corner_sets:
+        cols = np.clip((corners[:, 0] * 3 / w).astype(int), 0, 2)
+        rows = np.clip((corners[:, 1] * 3 / h).astype(int), 0, 2)
+        np.add.at(counts, (rows, cols), 1)
+    return counts
+
+
+def missing_coverage(counts, min_corners=20):
+    """Nazwy części kadru z mniej niż min_corners narożnikami."""
+    return [COVERAGE_NAMES[r][c] for r in range(3) for c in range(3) if counts[r, c] < min_corners]
+
+
 def calibrate(corner_sets, image_size, pattern=PATTERN, square=25.0):
     """Zwraca (CameraModel, błąd reprojekcji każdego ujęcia [px]). square w mm."""
     if len(corner_sets) < 3:

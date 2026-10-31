@@ -109,6 +109,15 @@ def test_view_signature_distinguishes_position_and_tilt():
     assert np.linalg.norm(tilted - straight) > 0.1
 
 
+def test_coverage_counts_corners_per_region():
+    corners = np.array([[10, 10], [310, 10], [160, 120], [160, 125], [310, 230]], dtype=np.float32)
+    counts = coverage([corners], SIZE)
+    assert counts.tolist() == [[1, 0, 1], [0, 2, 0], [0, 0, 1]]
+    assert missing_coverage(counts, min_corners=1) == [
+        "górny środek", "lewy brzeg", "prawy brzeg", "lewy dolny", "dolny środek",
+    ]
+
+
 def test_camera_model_save_load(tmp_path):
     model = CameraModel(320, 240, K_TRUE.copy(), np.array([0.1, -0.2, 0, 0, 0]), 0.15, {"views": 20})
     model.save(tmp_path / "cam.json")

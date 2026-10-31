@@ -2,7 +2,8 @@
 
 Trzymaj tablicę przed kamerą i zmieniaj ujęcie: blisko i daleko, w rogach i na brzegach kadru,
 pochylona w różne strony. Skrypt zapisuje tylko ujęcia ostre (tablica nieruchoma przez
-dwie klatki) i wyraźnie inne od już zebranych.
+dwie klatki) i wyraźnie inne od już zebranych, a po każdym wypisuje części kadru bez narożników.
+Żeby dosięgnąć rogów kadru, odsuń tablicę tak, by zajmowała ok. 1/3 szerokości kadru.
 """
 
 import argparse
@@ -12,7 +13,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from lili.body.camera_calibration import PATTERN, find_corners, view_signature
+from lili.body.camera_calibration import PATTERN, coverage, find_corners, missing_coverage, view_signature
 from lili.hw.camera import Camera
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "calib"
@@ -31,7 +32,7 @@ def main():
     out.mkdir(parents=True)
     print(f"Zapis do {out}. Ruszaj tablicą, Ctrl+C kończy wcześniej.")
 
-    signatures = []
+    signatures, corner_sets = [], []
     previous = None
     with Camera() as cam:
         try:
@@ -53,10 +54,13 @@ def main():
 
                 cv2.imwrite(str(out / f"{len(signatures):03d}.png"), image)
                 signatures.append(signature)
+                corner_sets.append(corners)
                 cx, cy, size = signature[:3]
+                missing = missing_coverage(coverage(corner_sets, (cam.width, cam.height)))
                 print(
                     f"{len(signatures)}/{args.count}  środek ({cx:.2f}, {cy:.2f}) kadru, "
                     f"szerokość {size:.2f} kadru"
+                    + (f"  | brakuje: {', '.join(missing)}" if missing else "  | cały kadr pokryty")
                 )
         except KeyboardInterrupt:
             pass

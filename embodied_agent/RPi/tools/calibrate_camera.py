@@ -7,7 +7,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from lili.body.camera_calibration import PATTERN, calibrate, find_corners
+from lili.body.camera_calibration import PATTERN, calibrate, coverage, find_corners, missing_coverage
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data" / "calib"
@@ -43,6 +43,13 @@ def main():
     for path, err in zip(used, per_view):
         flag = "  <- podejrzane, rozważ --drop" if err > 2 * median and err > 0.3 else ""
         print(f"  {path.stem}: {err:.3f} px{flag}")
+
+    counts = coverage(corner_sets, image_size)
+    print("\nNarożniki w częściach kadru (3x3):")
+    for row in counts:
+        print("  " + " ".join(f"{n:5d}" for n in row))
+    if missing := missing_coverage(counts):
+        print(f"UWAGA: mało danych w: {', '.join(missing)}. Dystorsja i ogniskowa mogą być niepewne.")
 
     fov_h, fov_v = model.fov_deg()
     print(f"\nfx={model.fx:.1f} fy={model.fy:.1f} cx={model.cx:.1f} cy={model.cy:.1f} px")
