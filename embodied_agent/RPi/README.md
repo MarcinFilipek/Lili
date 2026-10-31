@@ -74,6 +74,13 @@ python tools/record_session.py kubek --amplitude 15 --settle 0.8
 python tools/session_info.py                                   # podsumowanie najnowszej sesji
 ```
 
+### Kalibracja kamery
+
+```bash
+python tools/capture_calib.py                  # RPi: ruszaj tablicą, zbiera 25 ujęć
+python tools/calibrate_camera.py --square 25   # zmierzony bok pola w mm -> calib/camera_320x240.json
+```
+
 Sesje trafiają do `data/sessions/<data>_<etykieta>/`, format w [../doc/v4_design.md](../doc/v4_design.md).
 
 ## Połączenia RPi 5 ↔ STM32
