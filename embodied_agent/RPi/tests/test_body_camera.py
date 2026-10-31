@@ -2,7 +2,15 @@ import cv2
 import numpy as np
 import pytest
 
-from lili.body.camera_calibration import PATTERN, board_points, calibrate, find_corners, view_signature
+from lili.body.camera_calibration import (
+    PATTERN,
+    board_points,
+    calibrate,
+    coverage,
+    find_corners,
+    missing_coverage,
+    view_signature,
+)
 from lili.body.camera_model import CameraModel
 
 SIZE = (320, 240)
