@@ -28,7 +28,7 @@ Ten projekt implementuje:
 | **Płytka** | Nucleo-F042K6 |
 | **Taktowanie** | 48 MHz (HSI + PLL) |
 | **Framework** | STM32Cube HAL |
-| **IDE/Build** | PlatformIO |
+| **IDE/Build** | STM32CubeIDE for VS Code (CMake) lub PlatformIO |
 | **Częstotliwość PWM** | 18 kHz |
 | **Rozdzielczość PWM** | 2666 kroków (0-100%) |
 
@@ -90,13 +90,34 @@ Zakres: **0-100%**
 
 ## Kompilacja i wgrywanie
 
-### Wymagania
+### STM32CubeIDE for Visual Studio Code (CMake)
+
+Projekt ma konfigurację CMake zgodną z rozszerzeniem ST (`CMakeLists.txt`, `CMakePresets.json`,
+`cmake/`). HAL i CMSIS (STM32CubeF0 1.11.5) są w katalogu `Drivers/`, startup, `system_stm32f0xx.c`
+i `stm32f0xx_hal_conf.h` w `Core/`, linker script to `STM32F042K6TX_FLASH.ld`.
+
+1. Otwórz folder `embodied_agent/Stm32` w VS Code (jako osobny folder roboczy)
+2. Na pytanie rozszerzenia o skonfigurowanie wykrytego projektu CMake odpowiedz **Yes**
+   (zainstaluje CMake, Ninja i toolchain GNU Tools for STM32)
+3. Wybierz preset `Debug` lub `Release` i zbuduj (`F7` / *CMake: Build*)
+4. Debug/wgranie: **Run and Debug → STM32Cube: Launch ST-Link GDB Server** (`F5`)
+
+Z linii poleceń (z `arm-none-eabi-gcc` w `PATH`):
+
+```bash
+cmake --preset Debug
+cmake --build --preset Debug    # wynik: build/Debug/Stm32.elf (+ .hex, .bin)
+```
+
+### PlatformIO
+
+#### Wymagania
 
 - **PlatformIO** (VSCode extension lub CLI)
 - **ST-Link** (wbudowany w płytkę Nucleo)
 - **USB kabel** (Micro-USB)
 
-### Kompilacja
+#### Kompilacja
 
 ```bash
 # W katalogu projektu
@@ -112,7 +133,7 @@ pio run --target upload
 pio device monitor
 ```
 
-### VSCode
+#### VSCode
 
 1. Otwórz folder `embodied_agent/Stm32` w VSCode
 2. PlatformIO automatycznie wykryje projekt
