@@ -3,7 +3,10 @@ HEIGHT = 480
 
 
 class Camera:
-    """Picamera2, surowe klatki RGB. Przetwarzanie należy do warstwy agenta."""
+    """Picamera2, surowe klatki. Przetwarzanie należy do warstwy agenta.
+
+    Format "RGB888" w picamera2 daje w pamięci kolejność BGR (zgodną z OpenCV).
+    """
 
     def __init__(self, width=WIDTH, height=HEIGHT):
         from picamera2 import Picamera2
