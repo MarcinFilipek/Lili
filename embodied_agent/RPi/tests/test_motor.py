@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from lili.hw.stm_link import StmLink
-from lili.motor.programs import Step, peering
+from lili.motor.programs import Step, peering, sweep
 from lili.motor.runner import FrameRecorder, run_program
 
 
@@ -45,6 +45,19 @@ def test_peering_positions():
 def test_peering_rejects_out_of_range():
     with pytest.raises(ValueError):
         peering(amplitude=20, center=80)
+
+
+def test_sweep_goes_there_and_back_on_one_axis():
+    steps = sweep("tilt", limit=30, step=15, fixed=5)
+    assert [st.tilt for st in steps] == [-30, -15, 0, 15, 30, 15, 0, -15, -30]
+    assert all(st.pan == 5 for st in steps)
+
+
+def test_sweep_rejects_bad_axis_and_range():
+    with pytest.raises(ValueError):
+        sweep("roll")
+    with pytest.raises(ValueError):
+        sweep("pan", limit=95)
 
 
 def test_run_program_records_phases_commands_and_acks(ser):

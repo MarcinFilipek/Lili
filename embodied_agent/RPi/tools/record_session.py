@@ -1,4 +1,8 @@
-"""Nagranie sesji ruch-stop-patrz (peering pan) na RPi. Kamera nagrywa ciągle przez całą sesję."""
+"""Nagranie sesji ruch-stop-patrz na RPi. Kamera nagrywa ciągle przez całą sesję.
+
+    python tools/record_session.py peering kubek --amplitude 10
+    python tools/record_session.py sweep pan_kal --axis pan --limit 30 --step 5
+"""
 
 import argparse
 import subprocess
@@ -6,7 +10,7 @@ from pathlib import Path
 
 from lili.hw.camera import Camera
 from lili.hw.stm_link import CHANNEL_PAN, CHANNEL_TILT, StmLink
-from lili.motor.programs import peering
+from lili.motor.programs import peering, sweep
 from lili.motor.runner import FrameRecorder, run_program
 from lili.record.writer import SessionWriter
 
@@ -24,29 +28,43 @@ def code_version():
         return "unknown"
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("label", help="krótki opis sceny, trafia do nazwy katalogu")
-    ap.add_argument("--amplitude", type=float, default=10.0, help="wychylenie pan w stopniach")
-    ap.add_argument("--cycles", type=int, default=3)
-    ap.add_argument("--center", type=float, default=0.0)
-    ap.add_argument("--tilt", type=float, default=0.0)
-    ap.add_argument("--settle", type=float, default=0.5, help="czas na dojazd serw [s]")
-    ap.add_argument("--look", type=float, default=0.5, help="czas patrzenia po ustaleniu [s]")
-    ap.add_argument("--port", default="/dev/ttyAMA0")
-    ap.add_argument("--out", type=Path, default=DATA_DIR)
-    args = ap.parse_args()
+def build_program(args):
+    """(kroki, opis programu do meta.json)"""
+    if args.program == "peering":
+        params = dict(amplitude=args.amplitude, cycles=args.cycles, center=args.center, tilt=args.tilt)
+        steps = peering(**params, settle_s=args.settle, look_s=args.look)
+    else:
+        params = dict(axis=args.axis, limit=args.limit, step=args.step, fixed=args.fixed)
+        steps = sweep(**params, settle_s=args.settle, look_s=args.look)
+    return steps, {"name": args.program, **params, "settle_s": args.settle, "look_s": args.look}
 
-    program = {
-        "name": "peering",
-        "amplitude": args.amplitude,
-        "cycles": args.cycles,
-        "center": args.center,
-        "tilt": args.tilt,
-        "settle_s": args.settle,
-        "look_s": args.look,
-    }
-    steps = peering(args.amplitude, args.cycles, args.center, args.tilt, args.settle, args.look)
+
+def main():
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("label", help="krótki opis sceny, trafia do nazwy katalogu")
+    common.add_argument("--port", default="/dev/ttyAMA0")
+    common.add_argument("--out", type=Path, default=DATA_DIR)
+    common.add_argument("--look", type=float, default=0.5, help="czas patrzenia po ustaleniu [s]")
+
+    ap = argparse.ArgumentParser()
+    programs = ap.add_subparsers(dest="program", required=True)
+
+    p = programs.add_parser("peering", parents=[common], help="kołysanie pan wokół punktu")
+    p.add_argument("--amplitude", type=float, default=10.0, help="wychylenie pan w stopniach")
+    p.add_argument("--cycles", type=int, default=3)
+    p.add_argument("--center", type=float, default=0.0)
+    p.add_argument("--tilt", type=float, default=0.0)
+    p.add_argument("--settle", type=float, default=0.5, help="czas na dojazd serw [s]")
+
+    s = programs.add_parser("sweep", parents=[common], help="kalibracja serwa: przejazd osi tam i z powrotem")
+    s.add_argument("--axis", choices=["pan", "tilt"], required=True)
+    s.add_argument("--limit", type=float, default=30.0)
+    s.add_argument("--step", type=float, default=5.0)
+    s.add_argument("--fixed", type=float, default=0.0, help="pozycja drugiej osi")
+    s.add_argument("--settle", type=float, default=1.5, help="czas na dojazd serw [s]")
+
+    args = ap.parse_args()
+    steps, program = build_program(args)
 
     with Camera() as cam, StmLink(args.port) as link:
         # Pozycja startowa przed blokadą ekspozycji, żeby automatyka ustaliła się na tej scenie
@@ -59,7 +77,8 @@ def main():
             "camera": {**cam.info(), "controls": exposure},
             "program": program,
         }
-        print(f"Nagrywanie: {len(steps)} kroków")
+        duration = sum(st.settle_s + st.look_s for st in steps)
+        print(f"Nagrywanie: {len(steps)} kroków, ok. {duration:.0f} s")
         with SessionWriter(args.out, args.label, meta) as writer, FrameRecorder(cam, writer):
             run_program(steps, link, writer)
 

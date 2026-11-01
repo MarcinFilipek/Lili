@@ -91,6 +91,7 @@ RPi/
 │   │   └── runner.py        # wykonanie programu na hw + zapis przez record/
 │   ├── perception/          # tylko dane, zero sprzętu
 │   │   ├── preprocess.py    # rozdzielczość, szarość
+│   │   ├── rotation.py      # obrót kamery z obrazu (kalibracja serw, doprecyzowanie kopii eferentnej)
 │   │   ├── flow.py          # przepływ optyczny, jeden interfejs
 │   │   ├── derotation.py    # kompensacja obrotu
 │   │   ├── parallax.py      # przepływ resztkowy + T → 1/Z i pewność
@@ -151,8 +152,12 @@ Ustalenia:
 
 - **Kamera:** K z szachownicy, osobno dla każdej używanej rozdzielczości i trybu sensora.
 - **Serwa:** zależność zadany bajt → rzeczywisty kąt (tilt ma zakres impulsów 1000–1600 µs,
-  więc „stopnie” z protokołu nie są stopniami fizycznymi) i czas dojazdu, który wyznacza
-  długość fazy `settle`.
+  ograniczony konstrukcją głowy, więc „stopnie” z protokołu nie są stopniami fizycznymi) i czas
+  dojazdu, który wyznacza długość fazy `settle`. Mierzone kamerą: program `sweep` przejeżdża jedną
+  oś tam i z powrotem, obrót między postojami liczony jest z obrazu daleko położonej sceny.
+  Wynik: skala, oś obrotu w układzie kamery, histereza, opóźnienie i czas dojazdu (`calib/servo.json`).
+  Źródła błędów po stronie firmware: niedokładny zegar PCA9685 (absorbuje go pomiar), krok PCA
+  4,88 µs większy niż jednostka komendy tilt (3,3 µs), martwa strefa i luz przekładni.
 - **Geometria:** odsunięcie kamery od osi pan (ok. 8 cm) i tilt (do zmierzenia).
 
 ## Kamienie milowe

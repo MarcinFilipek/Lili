@@ -69,8 +69,8 @@ python tools/camera_preview.py       # podgląd kamery, 'q' kończy
 ### Nagrywanie sesji (RPi)
 
 ```bash
-python tools/record_session.py kubek_na_stole                  # peering ±10°, 3 cykle
-python tools/record_session.py kubek --amplitude 15 --settle 0.8
+python tools/record_session.py peering kubek_na_stole          # peering ±10°, 3 cykle
+python tools/record_session.py peering kubek --amplitude 15 --settle 0.8
 python tools/session_info.py                                   # podsumowanie najnowszej sesji
 ```
 
@@ -81,6 +81,17 @@ Sesje trafiają do `data/sessions/<data>_<etykieta>/`, format w [../doc/v4_desig
 ```bash
 python tools/capture_calib.py                  # RPi: ruszaj tablicą, zbiera 25 ujęć
 python tools/calibrate_camera.py --square 25   # zmierzony bok pola w mm -> calib/camera_320x240.json
+```
+
+### Kalibracja serw
+
+Kamera skierowana na daleką, szczegółową scenę (min. ok. 3 m), bo ramię 8 cm daje paralaksę.
+
+```bash
+python tools/record_session.py sweep pan_kal --axis pan --limit 30 --step 5
+python tools/calibrate_servo.py                # -> calib/servo.json [pan]
+python tools/record_session.py sweep tilt_kal --axis tilt --limit 75 --step 15
+python tools/calibrate_servo.py                # -> calib/servo.json [tilt]
 ```
 
 ## Połączenia RPi 5 ↔ STM32
