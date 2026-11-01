@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from lili.hw.stm_link import StmLink
-from lili.motor.programs import Step, peering, sweep
+from lili.motor.programs import Step, manual, peering, sweep
 from lili.motor.runner import FrameRecorder, run_program
 
 
@@ -58,6 +58,32 @@ def test_sweep_rejects_bad_axis_and_range():
         sweep("roll")
     with pytest.raises(ValueError):
         sweep("pan", limit=95)
+
+
+def test_manual_holds_servos_and_declares_offsets():
+    steps = manual(offsets_cm=(0, 2, 4), direction="lewo", pan=5, tilt=-3)
+    assert [(st.pan, st.tilt) for st in steps] == [(5, -3)] * 3
+    assert [st.offset for st in steps] == [(-0.0, 0.0, 0.0), (-0.02, 0.0, 0.0), (-0.04, 0.0, 0.0)]
+    assert all(st.prompt for st in steps) and "lewo do 4 cm" in steps[2].prompt
+
+
+def test_manual_rejects_bad_direction():
+    with pytest.raises(ValueError):
+        manual(direction="góra")
+
+
+def test_run_program_waits_for_operator_and_logs_base(ser):
+    writer, asked = ListWriter(), []
+    clock = itertools.count()
+    steps = manual(offsets_cm=(0, 2), settle_s=1.0, look_s=0.5)
+
+    run_program(steps, StmLink(serial_port=ser), writer, lambda: next(clock), lambda _: None, asked.append)
+
+    assert asked == [st.prompt for st in steps]
+    kinds = [(e["type"], e.get("phase")) for e in writer.events]
+    # Położenie podstawy zapisane po potwierdzeniu operatora, przed odczekaniem drgań
+    assert kinds[:6] == [("phase", "move"), ("cmd", None), ("stm", None), ("stm", None), ("base", None), ("phase", "settle")]
+    assert [e["offset"] for e in writer.events if e["type"] == "base"] == [[0.0, 0.0, 0.0], [0.02, 0.0, 0.0]]
 
 
 def test_run_program_records_phases_commands_and_acks(ser):

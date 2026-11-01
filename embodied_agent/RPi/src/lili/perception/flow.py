@@ -35,3 +35,11 @@ def warp_by_flow(image, flow):
 def forward_backward_error(flow_ab, flow_ba):
     """|flow_ab(x) + flow_ba(x + flow_ab(x))| [px]: duży przy zasłonięciach i błędach dopasowania."""
     return np.linalg.norm(flow_ab + warp_by_flow(flow_ba, flow_ab), axis=-1)
+
+
+def photometric_error(a, b, flow, window=5):
+    """Średnia |a - b przeniesione przepływem| w oknie: duża tam, gdzie przepływ wskazuje inną treść
+    (np. tło zasłonięte w b, któremu przepływ przypisał ruch obiektu).
+    """
+    warped = warp_by_flow(b.astype(np.float32), flow)
+    return cv2.blur(np.abs(warped - a.astype(np.float32)), (window, window))

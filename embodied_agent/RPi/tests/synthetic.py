@@ -180,3 +180,24 @@ def true_flow(scene, camera, pose_a, pose_b):
         & (np.abs(hits_b.depth - in_b[..., 2]) < 1e-6 * in_b[..., 2])
     )
     return flow.astype(np.float32), visible
+
+
+def boundaries(ids):
+    """Piksele (H, W) bool, których sąsiad z 4-sąsiedztwa należy do innego obiektu (obie strony granicy)."""
+    edge = np.zeros(ids.shape, bool)
+    horizontal = ids[:, 1:] != ids[:, :-1]
+    vertical = ids[1:] != ids[:-1]
+    edge[:, 1:] |= horizontal
+    edge[:, :-1] |= horizontal
+    edge[1:] |= vertical
+    edge[:-1] |= vertical
+    return edge
+
+
+def edge_scores(detected, truth, region, tolerance=2):
+    """(dokładność, kompletność) krawędzi w obszarze region, z tolerancją położenia w pikselach."""
+    to_truth = cv2.distanceTransform((~truth).astype(np.uint8), cv2.DIST_L2, 3)
+    to_detected = cv2.distanceTransform((~detected).astype(np.uint8), cv2.DIST_L2, 3)
+    precision = np.mean(to_truth[detected & region] <= tolerance)
+    recall = np.mean(to_detected[truth & region] <= tolerance)
+    return precision, recall

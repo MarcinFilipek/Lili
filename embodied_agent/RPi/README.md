@@ -94,9 +94,22 @@ python tools/record_session.py sweep tilt_kal --axis tilt --limit 75 --step 15
 python tools/calibrate_servo.py                # -> calib/servo.json [tilt]
 ```
 
+### Ręczna translacja (M4)
+
+Głowa na podstawce, pan 0, listwa przyłożona do boku podstawki, prostopadle do osi optycznej.
+Program prowadzi komunikatami: po każdym przesunięciu zabierz ręce i naciśnij Enter.
+
+```bash
+python tools/record_session.py manual stol_listwa --offsets 0 2 4            # RPi, przesuw w prawo
+python tools/record_session.py manual stol_listwa --offsets 0 2 4 --direction lewo
+```
+
 ### Percepcja
 
 ```bash
+python tools/view_session.py                   # Mac: najnowsza sesja, postoje 0 i 1, okno
+python tools/view_session.py --pair 0 2        # para postojów 0 i 2 (przy manual: 4 cm)
+python tools/view_session.py --save wynik.png  # RPi bez monitora: zapis mozaiki do pliku
 python tools/bench_perception.py               # czas derotacji, DIS i paralaksy w 320x240 i 160x120
 ```
 

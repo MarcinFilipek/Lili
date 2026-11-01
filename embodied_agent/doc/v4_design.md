@@ -192,6 +192,22 @@ Ustalenia:
   320×240 ok. 27 ms, 160×120 ok. 6 ms. Mapy derotacji raz na kąt: 52 / 13 ms. Paralaksa w numpy
   (12 ms) kosztuje więcej niż DIS (7 ms). Przy ruch-stop-patrz 320×240 mieści się z zapasem.
 
+## M4: krawędzie zasłaniania (stan na scenach syntetycznych)
+
+- `record_session.py manual`: serwa stoją, operator przesuwa robota wzdłuż listwy, deklarowane
+  położenie podstawy trafia do zdarzenia `base`. Kierunek T dopasowywany jest do przepływu
+  (`estimate_translation`, ok. 1° błędu), długość z deklaracji, więc 1/Z jest w skali deklaracji.
+- Wiarygodne 1/Z: mała niepewność względna oraz mały błąd fotometryczny (A wobec B' przeniesionego
+  przepływem). Sam test w przód i w tył przepuszcza część tła zasłoniętego w B, któremu DIS
+  spójnie przypisał ruch obiektu; błąd fotometryczny odrzuca ok. 95% takich pikseli.
+- `occlusion.py`: niepewne pasy przy krawędziach to tło zasłaniane lub odsłaniane, więc
+  wypełniane są najdalszą wartością w promieniu 15 px, po krótkim (2 px) rozszerzeniu pewnych
+  wartości, które odzyskuje rozmyty przez DIS brzeg obiektu. Skok log(1/Z) z gradientu po
+  wygładzeniu, cienkie krawędzie z cv2.Canny.
+- Wynik: dokładność krawędzi ok. 0,8 (tolerancja 2 px), kompletność ok. 0,9 dla obiektów w środku
+  kadru. Bliski obiekt przy brzegu kadru, który odjeżdża w stronę brzegu, DIS gubi (ten sam
+  problem co przy dużych przesunięciach); niepewność to zgłasza, ale jego kontur przepada.
+
 ## Otwarte pytania
 
 - Dokładne odsunięcie kamery od osi pan i tilt (zmierzyć przed M5).

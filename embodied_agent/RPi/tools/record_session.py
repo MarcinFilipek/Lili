@@ -2,6 +2,7 @@
 
     python tools/record_session.py peering kubek --amplitude 10
     python tools/record_session.py sweep pan_kal --axis pan --limit 30 --step 5
+    python tools/record_session.py manual stol_listwa --offsets 0 2 4
 """
 
 import argparse
@@ -10,7 +11,7 @@ from pathlib import Path
 
 from lili.hw.camera import Camera
 from lili.hw.stm_link import CHANNEL_PAN, CHANNEL_TILT, StmLink
-from lili.motor.programs import peering, sweep
+from lili.motor.programs import manual, peering, sweep
 from lili.motor.runner import FrameRecorder, run_program
 from lili.record.writer import SessionWriter
 
@@ -33,9 +34,12 @@ def build_program(args):
     if args.program == "peering":
         params = dict(amplitude=args.amplitude, cycles=args.cycles, center=args.center, tilt=args.tilt)
         steps = peering(**params, settle_s=args.settle, look_s=args.look)
-    else:
+    elif args.program == "sweep":
         params = dict(axis=args.axis, limit=args.limit, step=args.step, fixed=args.fixed)
         steps = sweep(**params, settle_s=args.settle, look_s=args.look)
+    else:
+        params = dict(offsets_cm=args.offsets, direction=args.direction, pan=args.pan, tilt=args.tilt)
+        steps = manual(**params, settle_s=args.settle, look_s=args.look)
     return steps, {"name": args.program, **params, "settle_s": args.settle, "look_s": args.look}
 
 
@@ -62,6 +66,13 @@ def main():
     s.add_argument("--step", type=float, default=5.0)
     s.add_argument("--fixed", type=float, default=0.0, help="pozycja drugiej osi")
     s.add_argument("--settle", type=float, default=1.5, help="czas na dojazd serw [s]")
+
+    m = programs.add_parser("manual", parents=[common], help="ręczne przesuwanie robota wzdłuż listwy, serwa stoją")
+    m.add_argument("--offsets", type=float, nargs="+", default=[0.0, 2.0, 4.0], help="położenia wzdłuż listwy [cm]")
+    m.add_argument("--direction", choices=["prawo", "lewo"], default="prawo", help="kierunek przesuwu względem kamery")
+    m.add_argument("--pan", type=float, default=0.0)
+    m.add_argument("--tilt", type=float, default=0.0)
+    m.add_argument("--settle", type=float, default=1.0, help="czas na wygaśnięcie drgań po zabraniu rąk [s]")
 
     args = ap.parse_args()
     steps, program = build_program(args)

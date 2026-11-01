@@ -33,3 +33,8 @@ def stm_event(t, channel, position):
 
 def phase_event(t, phase, step):
     return {"t": t, "type": "phase", "phase": phase, "step": step}
+
+
+def base_event(t, offset):
+    """Deklarowane (nie zmierzone) położenie podstawy robota [m], np. po ręcznym przesunięciu."""
+    return {"t": t, "type": "base", "offset": list(offset)}

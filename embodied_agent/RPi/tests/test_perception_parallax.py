@@ -9,7 +9,7 @@ from lili.body.efference import Efference
 from lili.body.geometry import Pose
 from lili.perception.derotation import derotate_pair
 from lili.perception.flow import dense_flow, forward_backward_error
-from lili.perception.parallax import epipolar_directions, parallax, rho_sigma
+from lili.perception.parallax import epipolar_directions, estimate_translation, parallax, rho_sigma
 from synthetic import IDENTITY, PINHOLE, ground_truth, render, rotation, table_scene, true_flow
 
 CALIB_DIR = Path(__file__).resolve().parent.parent / "calib"
@@ -35,6 +35,16 @@ def test_gain_vanishes_at_epipole():
     assert gain[0, 0] == pytest.approx(np.hypot(160, 120) * 0.03)  # |p - c| * Tz
     par = parallax(np.zeros((240, 320, 2), np.float32), PINHOLE.K, T)
     assert np.isnan(par.rho[120, 160]) and rho_sigma(par)[120, 160] == np.inf
+
+
+@pytest.mark.parametrize("T", [[0.02, 0.003, 0.004], [-0.015, 0.0, -0.005], [0.002, 0.018, 0.0]])
+def test_estimate_translation_direction_from_exact_flow(T):
+    T = np.array(T)
+    flow, visible = true_flow(SCENE, PINHOLE, IDENTITY, Pose(np.eye(3), T))
+    guess = np.sign(T) * (np.abs(T) == np.abs(T).max()) * 0.02  # tylko główna oś, jak deklaracja ręki
+    estimated = estimate_translation(flow, PINHOLE.K, guess, visible)
+    np.testing.assert_allclose(estimated / np.linalg.norm(estimated), T / np.linalg.norm(T), atol=1e-4)
+    assert np.linalg.norm(estimated) == pytest.approx(0.02)
 
 
 def test_relative_scale():

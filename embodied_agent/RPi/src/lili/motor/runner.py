@@ -6,8 +6,11 @@ from lili.hw.stm_link.protocol import degrees_to_byte
 from lili.record import schema as s
 
 
-def run_program(steps, link, writer, clock=time.monotonic_ns, sleep=time.sleep):
-    """Wykonuje kroki ruch-stop-patrz, zapisując fazy, komendy i odpowiedzi STM32."""
+def run_program(steps, link, writer, clock=time.monotonic_ns, sleep=time.sleep, ask=input):
+    """Wykonuje kroki ruch-stop-patrz, zapisując fazy, komendy i odpowiedzi STM32.
+
+    ask(prompt) czeka na operatora w krokach z poleceniem (np. ręczne przesunięcie robota).
+    """
     for i, step in enumerate(steps):
         writer.add_event(s.phase_event(clock(), s.PHASE_MOVE, i))
         writer.add_event(
@@ -16,6 +19,10 @@ def run_program(steps, link, writer, clock=time.monotonic_ns, sleep=time.sleep):
         for channel, degrees in ((CHANNEL_PAN, step.pan), (CHANNEL_TILT, step.tilt)):
             position = link.set_position(channel, degrees)
             writer.add_event(s.stm_event(clock(), channel, position))
+        if step.prompt:
+            ask(step.prompt)
+        if step.offset is not None:
+            writer.add_event(s.base_event(clock(), step.offset))
 
         writer.add_event(s.phase_event(clock(), s.PHASE_SETTLE, i))
         sleep(step.settle_s)

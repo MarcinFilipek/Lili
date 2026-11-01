@@ -46,6 +46,37 @@ def parallax(flow, K, T, min_gain=1e-3):
     return Parallax(rho, np.where(usable, gain, 0.0), residual)
 
 
+def estimate_translation(flow, K, T_guess, mask=None, iterations=5):
+    """Kierunek T dopasowany do przepływu po derotacji, długość z T_guess.
+
+    Przepływ każdego piksela jest równoległy do d(T), więc u x d(T) = 0 jest liniowe w T:
+    [u_y fx, -u_x fy, u_x fy y - u_y fx x] . T = 0. Kierunek to wektor osobliwy dla najmniejszej
+    wartości osobliwej, z wagami odpornymi (IRLS) na błędne dopasowania i zasłonięcia.
+    Znak wybierany zgodnie z T_guess (rho > 0 dla punktów przed kamerą).
+    """
+    T_guess = np.asarray(T_guess, float)
+    h, w = flow.shape[:2]
+    fx, fy, cx, cy = K[0, 0], K[1, 1], K[0, 2], K[1, 2]
+    xs, ys = np.meshgrid((np.arange(w) - cx) / fx, (np.arange(h) - cy) / fy)
+    ux, uy = flow[..., 0], flow[..., 1]
+    norm = np.hypot(ux, uy)
+    # Przepływ poniżej 0.2 px ma kierunek zdominowany przez szum
+    use = norm > 0.2 if mask is None else mask & (norm > 0.2)
+    A = np.stack([uy * fx, -ux * fy, ux * fy * ys - uy * fx * xs], axis=-1)[use]
+    A /= norm[use][:, None]  # wiersz = sinus kąta między u i d, razy |d| / |T|
+
+    weights = np.ones(len(A))
+    for _ in range(iterations):
+        _, _, Vt = np.linalg.svd(A * weights[:, None], full_matrices=False)
+        direction = Vt[-1]
+        residual = np.abs(A @ direction)
+        scale = 1.4826 * np.median(residual) + 1e-12
+        weights = 1 / np.maximum(1, residual / (2 * scale))  # Huber
+    if direction @ T_guess < 0:
+        direction = -direction
+    return direction * np.linalg.norm(T_guess)
+
+
 def rho_sigma(par, flow_noise=0.1, fb_error=None):
     """Przybliżona niepewność rho [1/m]: niepewność przepływu [px] podzielona przez gain.
 
