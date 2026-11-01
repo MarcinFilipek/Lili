@@ -12,7 +12,7 @@ Poprzednie wersje: tagi `rpi-v3-final`, `rpi-v3-latest`.
 | Głowa | serwa pan/tilt przez STM32 + PCA9685, protokół UART: [protocol.md](protocol.md) |
 | Napęd (później) | gąsienice L/R, sterownik Cytron MDD3A na STM32 (nowe komendy do dopisania w protocol.md) |
 
-Kamera jest odsunięta od osi pan o ok. **8 cm** (do dokładnego pomiaru, gdy będzie potrzebny).
+Obiektyw jest odsunięty od osi pan o **9,9 cm**, a od osi tilt o **2,6 cm** (`calib/head.json`).
 
 ## Cel etapu 1: separacja obiektów z paralaksy ruchu
 
@@ -29,19 +29,19 @@ dostajemy przybliżone 1/Z. Skoki 1/Z to krawędzie zasłaniania, czyli prawdziw
 
 1. **Ręczne przesuwanie** robota (5–10 cm, bez obrotu): mocny, czysty sygnał, T znane tylko
    w przybliżeniu → głębia względna. Pierwszy test całego łańcucha.
-2. **Peering na serwach**: obrót pan o θ przy kamerze odsuniętej o r = 8 cm od osi daje
-   translację T = 2r·sin(θ/2), dla θ = 10° to ok. 1,4 cm.
+2. **Peering na serwach**: obrót pan o θ przy kamerze odsuniętej o r = 9,9 cm od osi daje
+   translację T = 2r·sin(θ/2), dla θ = 10° to ok. 1,7 cm.
 3. **Gąsienice**: później, ta sama percepcja, inne źródło (R, T).
 
-Szacunek dla 320×240 (f ≈ 310 px), pan 10°, r = 8 cm:
+Szacunek dla 320×240 (f ≈ 376 px z kalibracji), pan 10°, r = 9,9 cm:
 
 | Odległość | Przesunięcie z paralaksy |
 |---|---|
-| 30 cm | ok. 14 px |
-| 1 m | ok. 4 px |
-| 3 m | ok. 1,4 px |
+| 30 cm | ok. 22 px |
+| 1 m | ok. 6,5 px |
+| 3 m | ok. 2,2 px |
 
-Obrót sam w sobie przesuwa obraz o ok. 55 px. Błąd znajomości kąta o 0,5° daje ok. 2,7 px
+Obrót sam w sobie przesuwa obraz o ok. 66 px. Błąd znajomości kąta o 0,5° daje ok. 3,3 px
 prawie stałego błędu w całym obrazie: przesuwa absolutne 1/Z, ale nie niszczy jego skoków,
 więc krawędzie zasłaniania są odporne na niedokładną kalibrację.
 
@@ -158,7 +158,11 @@ Ustalenia:
   Wynik: skala, oś obrotu w układzie kamery, histereza, opóźnienie i czas dojazdu (`calib/servo.json`).
   Źródła błędów po stronie firmware: niedokładny zegar PCA9685 (absorbuje go pomiar), krok PCA
   4,88 µs większy niż jednostka komendy tilt (3,3 µs), martwa strefa i luz przekładni.
-- **Geometria:** odsunięcie kamery od osi pan (ok. 8 cm) i tilt (do zmierzenia).
+- **Geometria:** odsunięcie obiektywu od osi pan (9,9 cm) i tilt (2,6 cm), pomiar linijką.
+  Model zakłada obiektyw na wprost przed osiami. Osie z kalibracji serw: tilt dokładnie wzdłuż osi x
+  kamery, pan odchylony o ok. 10° od osi y (przy tilt 0 kamera nie jest prostopadła do osi pan).
+  Serwa są lokalnie nieliniowe (pan: 0→+10 to 8,7°, 0→−10 to 9,5°) i mają histerezę 0,3–0,4°
+  (ok. 2–2,5 px), dlatego kopia eferentna korzysta z tabeli kątów, a obrót warto doprecyzować z obrazu.
 
 ## Kamienie milowe
 

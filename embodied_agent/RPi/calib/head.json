@@ -1,0 +1,5 @@
+{
+  "pan_lever_m": 0.099,
+  "tilt_lever_m": 0.026,
+  "note": "Odległość obiektywu od osi pan i tilt, pomiar linijką 2026-11-01. Model zakłada obiektyw na wprost przed osią, wzdłuż osi optycznej."
+}
