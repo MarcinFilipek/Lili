@@ -94,6 +94,12 @@ python tools/record_session.py sweep tilt_kal --axis tilt --limit 75 --step 15
 python tools/calibrate_servo.py                # -> calib/servo.json [tilt]
 ```
 
+### Percepcja
+
+```bash
+python tools/bench_perception.py               # czas derotacji, DIS i paralaksy w 320x240 i 160x120
+```
+
 ## Połączenia RPi 5 ↔ STM32
 
 | RPi | STM32 |

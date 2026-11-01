@@ -113,10 +113,13 @@ gąsienice czy ręka.
 1. **preprocess:** szarość, docelowa rozdzielczość.
 2. **efference:** z kątów serw (i później odometrii) poza B względem A: R, T.
 3. **derotation:** przekształcenie B homografią obrotu H = K·Rᵀ·K⁻¹. Po tym kroku zostaje
-   tylko mały przepływ translacyjny, co ułatwia pracę algorytmowi przepływu.
+   tylko mały przepływ translacyjny, co ułatwia pracę algorytmowi przepływu. Homografia działa
+   tylko bez dystorsji, więc jeden `cv2.remap` robi naraz korekcję dystorsji i obrót (A dostaje
+   samą korekcję), a dalsze kroki pracują w geometrii otworkowej o tej samej K.
 4. **flow:** przepływ optyczny A → B' (oraz B' → A do sprawdzenia spójności).
 5. **parallax:** rzut przepływu resztkowego na kierunek wynikający z T → 1/Z na piksel
-   + pewność (tekstura, spójność w przód i w tył).
+   + niepewność 1/Z (składowa przepływu niezgodna z T, spójność w przód i w tył, odległość
+   od epipolu). Wzór dokładny, bez przybliżenia u ≈ f·T/Z: u = ρ·d/(1 − ρ·Tz).
 6. **occlusion:** krawędzie z gradientu 1/Z oraz obszary niespójnego przepływu
    (odsłonięcia i zasłonięcia) → kontury obiektów.
 
@@ -171,10 +174,20 @@ Ustalenia:
 | M0 | Struktura pakietu, `stm_link` i `camera` przeniesione do `hw/` | testy przechodzą, narzędzia działają na RPi |
 | M1 | `record/` + `tools/record_session.py` z prostym programem ruch-stop-patrz | sesja zapisuje się na RPi i odczytuje na Macu |
 | M2 | Kalibracja kamery i serw | `calib/` z K i modelem serw |
-| M3 | `synthetic.py`, `derotation`, `parallax` | na scenach syntetycznych czysty obrót daje resztkę ≈ 0, a odzyskane 1/Z zgadza się z prawdziwym |
+| M3 | `synthetic.py`, `derotation`, `flow`, `parallax` | na scenach syntetycznych czysty obrót daje resztkę ≈ 0, a odzyskane 1/Z zgadza się z prawdziwym |
 | M4 | Nagrania z ręczną translacją, `occlusion`, `view_session` | widoczne krawędzie obiektów na stole |
 | M5 | Peering na serwach | kryterium sukcesu etapu 1 |
 | później | Gąsienice: MDD3A na STM32, `hw/drive.py`, kopia eferentna napędu | — |
+
+## Wyniki M3 (sceny syntetyczne, `tests/synthetic.py`)
+
+- Czysty obrót po derotacji: resztkowy przepływ DIS ok. 0,01 px (mediana), także z dystorsją z kalibracji.
+- Peering pan ±10°, 15° z prawdziwej kalibracji (T ≈ 1,5 cm): mediana błędu 1/Z na obiektach 0,35–3 m
+  poniżej 1,5%. Błąd kąta 0,5° przesuwa 1/Z o ok. 0,6 1/m, a skoki 1/Z między obiektami zostają (±6%).
+- Obiekty, które po obrocie wychodzą poza wspólne pole widzenia, dostają dużą niepewność.
+- DIS zawodzi przy przepływie porównywalnym z rozmiarem obiektu (ręczna translacja 5 cm, obiekt
+  0,35 m: ok. 54 px przy obiekcie szerokim na 86 px): piramida gubi mały obiekt na grubych poziomach.
+  Do M4: albo translacje ok. 2 cm, albo przeszukiwanie wzdłuż linii epipolarnych (T jest znane).
 
 ## Otwarte pytania
 
