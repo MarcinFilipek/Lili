@@ -188,6 +188,9 @@ Ustalenia:
 - DIS zawodzi przy przepływie porównywalnym z rozmiarem obiektu (ręczna translacja 5 cm, obiekt
   0,35 m: ok. 54 px przy obiekcie szerokim na 86 px): piramida gubi mały obiekt na grubych poziomach.
   Do M4: albo translacje ok. 2 cm, albo przeszukiwanie wzdłuż linii epipolarnych (T jest znane).
+- Czas na RPi 5 (OpenCV 4.12, `tools/bench_perception.py`), para A/B z przepływem wstecz:
+  320×240 ok. 27 ms, 160×120 ok. 6 ms. Mapy derotacji raz na kąt: 52 / 13 ms. Paralaksa w numpy
+  (12 ms) kosztuje więcej niż DIS (7 ms). Przy ruch-stop-patrz 320×240 mieści się z zapasem.
 
 ## Otwarte pytania
 
