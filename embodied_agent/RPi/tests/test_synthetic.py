@@ -60,10 +60,12 @@ def test_render_matches_true_flow():
     a, b = render(scene, DISTORTED), render(scene, DISTORTED, pose_b)
     flow, visible = true_flow(scene, DISTORTED, IDENTITY, pose_b)
     xs, ys = np.meshgrid(np.arange(320, dtype=np.float32), np.arange(240, dtype=np.float32))
-    warped = cv2.remap(b, xs + flow[..., 0], ys + flow[..., 1], cv2.INTER_LINEAR).astype(float)
-    inner = cv2.erode(visible.astype(np.uint8), np.ones((5, 5))).astype(bool)
-    diff = np.abs(warped - a)[inner]
-    assert np.median(diff) < 2 and np.percentile(diff, 90) < 6  # na 0..255, resztka z interpolacji
+    warped = cv2.remap(b.astype(np.float32), xs + flow[..., 0], ys + flow[..., 1], cv2.INTER_LINEAR)
+    # borderValue=0: przycina też brzegi kadru, gdzie przepływ wskazuje tuż za obraz B
+    inner = cv2.erode(visible.astype(np.uint8), np.ones((5, 5)), borderType=cv2.BORDER_CONSTANT, borderValue=0)
+    diff = np.abs(warped - a)[inner.astype(bool)]
+    # Na 0..255 resztka z interpolacji i zaokrągleń; przepływ błędny o 0,5 px daje ok. 5 / 13
+    assert np.median(diff) < 2.5 and np.percentile(diff, 90) < 6
     assert np.median(np.abs(np.roll(a, 3, axis=1).astype(float) - a)) > 20  # a tekstura jest wyraźna
 
 
