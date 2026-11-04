@@ -37,12 +37,20 @@ def forward_backward_error(flow_ab, flow_ba):
     return np.linalg.norm(flow_ab + warp_by_flow(flow_ba, flow_ab), axis=-1)
 
 
-def photometric_error(a, b, flow, window=5):
+def photometric_error(a, b, flow, mask=None, window=5):
     """Średnia |a - b przeniesione przepływem| w oknie: duża tam, gdzie przepływ wskazuje inną treść
     (np. tło zasłonięte w b, któremu przepływ przypisał ruch obiektu).
+
+    Przed porównaniem jasność b dopasowywana jest do a wspólnym wzmocnieniem i przesunięciem
+    (średnia i odchylenie na pikselach mask): zmiana oświetlenia między ujęciami o kilka procent
+    nie powinna wyglądać jak błędne dopasowanie.
     """
+    a = a.astype(np.float32)
     warped = warp_by_flow(b.astype(np.float32), flow)
-    return cv2.blur(np.abs(warped - a.astype(np.float32)), (window, window))
+    sel = np.ones(a.shape, bool) if mask is None else mask
+    gain = a[sel].std() / max(warped[sel].std(), 1e-6)
+    warped = (warped - warped[sel].mean()) * gain + a[sel].mean()
+    return cv2.blur(np.abs(warped - a), (window, window))
 
 
 def texture_strength(image, window=7):

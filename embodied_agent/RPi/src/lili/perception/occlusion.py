@@ -1,10 +1,14 @@
 """Krawędzie zasłaniania ze skoków odwrotnej głębi.
 
-Skok mierzony jest w log(rho): różnica log(rho) to stosunek odległości, więc ten sam próg działa
-dla obiektu na tle 1 m i 3 m. DIS rozmywa przepływ na krawędzi na kilka pikseli, a tuż przy niej
-przepływ jest niepewny (odsłonięcia), więc niepewne piksele wypełniane są dalszym z pewnych
-sąsiadów, a skok mierzy gradient wygładzonego log(rho). Cienkie krawędzie daje tłumienie
-niemaksymalnych wartości z cv2.Canny.
+Skok mierzony jest jako różnica rho przeliczona na piksele przepływu (razy gain z parallax), czyli
+jako różnica paralaksy obu stron krawędzi. Taki próg porównuje się wprost z szumem przepływu,
+sam skaluje się z długością T, a stały dodatek do rho od nieznanego drobnego obrotu kamery
+(ok. 0.3 deg przy ręcznym przesuwaniu) znosi się w różnicy. Stosunek odległości (log rho) nie ma
+tej własności: dodatek go zmniejsza, najbardziej dla dalekich obiektów.
+
+DIS rozmywa przepływ na krawędzi na kilka pikseli, a tuż przy niej przepływ jest niepewny
+(odsłonięcia), więc niepewne piksele wypełniane są dalszym z pewnych sąsiadów, a skok mierzy
+gradient wygładzonego rho. Cienkie krawędzie daje tłumienie niemaksymalnych wartości z cv2.Canny.
 """
 
 from dataclasses import dataclass
@@ -16,8 +20,8 @@ import numpy as np
 @dataclass
 class Occlusion:
     edges: np.ndarray  # (H, W) bool, cienkie krawędzie zasłaniania
-    jump_x: np.ndarray  # (H, W) skok log(rho) w poprzek kolumn; > 0: bliżej jest prawa strona
-    jump_y: np.ndarray  # (H, W) skok log(rho) w poprzek wierszy; > 0: bliżej jest dolna strona
+    jump_x: np.ndarray  # (H, W) skok paralaksy [px] w poprzek kolumn; > 0: bliżej jest prawa strona
+    jump_y: np.ndarray  # (H, W) skok paralaksy [px] w poprzek wierszy; > 0: bliżej jest dolna strona
     reliable: np.ndarray  # (H, W) bool, piksele z wiarygodnym rho
     supported: np.ndarray  # (H, W) bool, pewne lub z pewnym pikselem w promieniu wypełniania
 
@@ -35,8 +39,8 @@ def grow(values, known, steps):
     return values, known
 
 
-def fill_far(log_rho, reliable, radius=15):
-    """Wypełnia niepewne piksele najmniejszym log(rho) (najdalszym) z pewnych pikseli w promieniu radius.
+def fill_far(rho, reliable, radius=15, fillable=None):
+    """Wypełnia niepewne piksele najmniejszym rho (najdalszym) z pewnych pikseli w promieniu radius.
 
     Niepewne pasy przy krawędziach to tło zasłaniane lub odsłaniane przez bliższy obiekt
     (sam obiekt widać w obu ujęciach), więc wypełnienie tłem stawia skok na konturze obiektu.
@@ -44,10 +48,15 @@ def fill_far(log_rho, reliable, radius=15):
     Większe dziury wypełniane są dalej, krok po kroku, ale tam wartości z różnych stron stykają
     się w przypadkowych liniach, więc zwracana jest też maska supported: piksele pewne lub
     z pewnym pikselem w promieniu radius.
+    fillable: piksele, które wolno wypełnić tłem z promienia radius (domyślnie wszystkie). Plamy bez
+    tekstury nie są zasłonięciem, tylko niewiadomą: wypełniane są dopiero krok po kroku i nie
+    liczą się jako supported.
     """
     unknown = 1e30  # cv2.erode zamienia inf na największy float32, więc zwykły duży znacznik
-    filled = np.where(reliable, log_rho, unknown).astype(np.float32)
+    filled = np.where(reliable, rho, unknown).astype(np.float32)
     window = cv2.erode(filled, np.ones((2 * radius + 1, 2 * radius + 1), np.uint8))
+    if fillable is not None:
+        window[~fillable] = unknown
     filled = np.where(reliable, filled, window)
     known = filled < unknown
     supported = known.copy()
@@ -71,29 +80,39 @@ def drop_small_regions(mask, min_area):
     return keep[labels]
 
 
-def occlusion_edges(rho, reliable, jump=0.3, smooth=1.5, min_area=50, near_grow=2):
-    """Krawędzie, na których log(rho) skacze o więcej niż jump (0.3 = odległości różne o ok. 35%).
+def occlusion_edges(rho, reliable, gain, fillable=None, min_jump_px=1.5, smooth=1.5, trend=6.0, step_ratio=2.0,
+                    min_area=50, near_grow=2):
+    """Krawędzie, na których paralaksa skacze o więcej niż min_jump_px pikseli.
 
     reliable: piksele z wiarygodnym rho (np. pipeline.reliable_mask), reszta wypełniana tłem.
-    smooth: sigma wygładzenia log(rho) [px] przed liczeniem gradientu.
+    gain: przepływ [px] na jednostkę rho w każdym pikselu (Parallax.gain).
+    fillable: niepewne piksele, które mogą być zasłoniętym tłem (z teksturą); patrz fill_far.
+    smooth: sigma wygładzenia rho [px] przed liczeniem gradientu.
+    trend: sigma [px] szerszej skali do odróżnienia skoku od rampy. Płaszczyzna pochylona względem
+    kamery (podłoga tuż przed nią) ma stromy, ale stały gradient rho: w obu skalach taki sam.
+    Przy skoku gradient w skali smooth jest trend / smooth razy większy niż w skali trend,
+    więc krawędź wymaga co najmniej step_ratio razy większego.
     """
     reliable = drop_small_regions(reliable & np.isfinite(rho) & (rho > 0), min_area)
     # DIS rozmywa przepływ także na kilku pikselach obiektu przy krawędzi: te odzyskuje
     # krótkie rozszerzenie pewnych wartości, dopiero resztę pasa wypełnia tło
-    log_rho, known = grow(np.log(np.where(reliable, rho, 1.0)), reliable, near_grow)
-    log_rho, supported = fill_far(log_rho, known)
-    log_rho = cv2.GaussianBlur(cv2.medianBlur(log_rho, 3), (0, 0), smooth)
+    filled, known = grow(np.where(reliable, rho, 0.0), reliable, near_grow)
+    filled, supported = fill_far(filled, known, fillable=None if fillable is None else fillable | known)
+    filled = cv2.medianBlur(filled, 3)
+    fine_y, fine_x = np.gradient(cv2.GaussianBlur(filled, (0, 0), smooth))
+    coarse_y, coarse_x = np.gradient(cv2.GaussianBlur(filled, (0, 0), trend))
+    is_step = np.hypot(fine_x, fine_y) > step_ratio * np.hypot(coarse_x, coarse_y)
 
-    # Gradient przeskalowany tak, że idealny skok o J daje w szczycie J
+    # Gradient przeskalowany tak, że idealny skok o J daje w szczycie J, potem na piksele przepływu
     scale = np.sqrt(2 * np.pi) * smooth
-    jump_y, jump_x = (g * scale for g in np.gradient(log_rho))
+    jump_x, jump_y = fine_x * scale * gain, fine_y * scale * gain
 
     # Canny na gotowych pochodnych: tłumienie niemaksymalnych i histereza (słabsze krawędzie
-    # przyłączone do mocnych), w jednostkach 1/1000 log(rho)
-    dx = np.clip(jump_x * 1000, -32767, 32767).astype(np.int16)
-    dy = np.clip(jump_y * 1000, -32767, 32767).astype(np.int16)
-    edges = cv2.Canny(dx, dy, 0.6 * jump * 1000, jump * 1000, L2gradient=True) > 0
+    # przyłączone do mocnych), w jednostkach 1/100 px
+    dx = np.clip(jump_x * 100, -32767, 32767).astype(np.int16)
+    dy = np.clip(jump_y * 100, -32767, 32767).astype(np.int16)
+    edges = cv2.Canny(dx, dy, 0.6 * min_jump_px * 100, min_jump_px * 100, L2gradient=True) > 0
     # Bez krawędzi tam, gdzie wypełnienie nie ma oparcia w pobliskich pewnych pikselach (duże plamy
     # bez tekstury); margines na wygładzenie
     supported_inner = cv2.erode(supported.astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool)
-    return Occlusion(edges & supported_inner, jump_x, jump_y, reliable, supported)
+    return Occlusion(edges & supported_inner & is_step, jump_x, jump_y, reliable, supported)

@@ -224,6 +224,22 @@ Trzy kartony na podłodze, tło z tkaniny, przesuw ręką wzdłuż listwy 0, 2, 
 - Kontury górnych części kartonów (na tle tkaniny) wykrywane; dolne części stoją na tle
   podłogi bez tekstury i krawędzi tam nie ma.
 
+### Porównanie z miarką i źródło błędu (2026-11-04)
+
+Odległości z miarki: 0,31 / 0,47 / 0,72 / 1,48 m (karton przedni, MAGNE B6, karton tylny, tkanina).
+- Bez lampy (wzmocnienie 8, jasność między postojami 135 → 140 → 142): 1/Z z obrazu ≈
+  0,92 · prawdziwe + 0,56 1/m. Z lampą (jasność stabilna, ±1%): ≈ 0,89 · prawdziwe + 0,29,
+  bliskie obiekty z dokładnością 1–2 cm.
+- Stały dodatek do 1/Z to podpis obrotu kamery o ok. 0,3–0,5°, nierozróżnialnego od translacji
+  na jednej parze. Test bez przesuwania robota (`bez_dotyku`, `dotyk`): obrót między postojami
+  < 0,002° także przy dociskaniu podstawki, więc głowa i serwa trzymają pozycję, a obrót
+  powstaje przy samym przesuwaniu podstawki wzdłuż listwy.
+- Wniosek: krawędzie liczone są z różnicy paralaksy w pikselach (odporne na stały dodatek), nie
+  ze stosunku odległości. Krawędź wymaga skoku (gradient w skali 1,5 px co najmniej 2 razy
+  większy niż w skali 6 px), więc stroma, ale płynna podłoga tuż przed kamerą jej nie daje.
+  Niepewne piksele bez tekstury to niewiadoma, a nie zasłonięte tło: nie są wypełniane tłem.
+  Błąd fotometryczny liczony po dopasowaniu jasności B do A (wzmocnienie i przesunięcie).
+
 ## Otwarte pytania
 
 - Dokładne odsunięcie kamery od osi pan i tilt (zmierzyć przed M5).

@@ -98,8 +98,10 @@ def process_pair(image_a, image_b, camera, pose, refine_translation=False):
         T = estimate_translation(flow, camera.K, T, valid & (fb < 0.5))
     par = parallax(flow, camera.K, T)
     sigma = rho_sigma(par, fb_error=fb)
-    reliable = reliable_mask(par.rho, sigma, photometric_error(a, b, flow), texture_strength(a), valid)
-    occlusion = occlusion_edges(par.rho, reliable)
+    texture = texture_strength(a)
+    reliable = reliable_mask(par.rho, sigma, photometric_error(a, b, flow, valid), texture, valid)
+    # Niepewne z teksturą to zwykle tło zasłonięte w B; bez tekstury to niewiadoma (podłoga, ściana)
+    occlusion = occlusion_edges(par.rho, reliable, par.gain, fillable=valid & (texture > 1.0))
     # Przy brzegu wspólnego pola widzenia wypełnienie poza nim daje sztuczne skoki
     inner = cv2.erode(valid.astype(np.uint8), np.ones((7, 7), np.uint8)).astype(bool)
     return PairResult(a, b, valid, flow, T, par.rho, sigma, occlusion.reliable, occlusion.edges & inner)
