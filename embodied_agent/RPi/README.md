@@ -63,8 +63,18 @@ with StmLink() as link:
 
 ```bash
 python tools/uart_stress.py -n 100   # stres-test UART
-python tools/camera_preview.py       # podgląd kamery, 'q' kończy
+python tools/camera_preview.py       # podgląd kamery na monitorze RPi, 'q' kończy
 ```
+
+Podgląd na żywo przez SSH (przeglądarka na Macu):
+
+```bash
+python tools/camera_stream.py                           # RPi, --color dla koloru
+ssh -N -L 8000:localhost:8000 uzume@raspberrypi         # Mac, drugi terminal
+```
+
+Potem http://localhost:8000. Żółty krzyż wyznacza środek kadru. Kamera może mieć jednego
+użytkownika naraz, więc przed `record_session.py` zatrzymaj podgląd (Ctrl+C).
 
 ### Nagrywanie sesji (RPi)
 
