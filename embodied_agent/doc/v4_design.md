@@ -208,6 +208,22 @@ Ustalenia:
   kadru. Bliski obiekt przy brzegu kadru, który odjeżdża w stronę brzegu, DIS gubi (ten sam
   problem co przy dużych przesunięciach); niepewność to zgłasza, ale jego kontur przepada.
 
+### Pierwsze nagranie (2026-11-04, `20261104-113744_tkanina`)
+
+Trzy kartony na podłodze, tło z tkaniny, przesuw ręką wzdłuż listwy 0, 2, 4 cm.
+- Kierunek T z obrazu: (2,00; −0,00; −0,01) cm, czyli przesuw prawie idealnie w bok.
+- Odległości z pary 0–1 (2 cm): karton przedni 0,28 m, MAGNE B6 0,40 m, karton tylny 0,54 m,
+  tkanina 0,86 m (do porównania z miarką).
+- Para 0–2 (4 cm) daje odległości większe o 7–16%, najbardziej dla tła: zgodne z drobnym
+  obrotem robota przy drugim przesunięciu (ok. 0,3°). Obrót z obrazu (`rotation.py`) do rozważenia.
+  Przy 4 cm bliższe obiekty przesuwają się o 30+ px i DIS je gubi; 2 cm wystarcza.
+- Na podłodze i gładkiej ścianie DIS interpoluje przepływ, a błąd fotometryczny tego nie wykrywa:
+  dodany próg tekstury (`texture_strength` > 1 poziom/px; szum na ścianie ok. 0,2). Krawędzie tylko
+  tam, gdzie w promieniu wypełniania są pewne piksele, bo na dużych plamach bez tekstury
+  wypełnienie z różnych stron daje przypadkowe linie.
+- Kontury górnych części kartonów (na tle tkaniny) wykrywane; dolne części stoją na tle
+  podłogi bez tekstury i krawędzi tam nie ma.
+
 ## Otwarte pytania
 
 - Dokładne odsunięcie kamery od osi pan i tilt (zmierzyć przed M5).

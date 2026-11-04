@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from lili.body.geometry import Pose
-from lili.perception.flow import dense_flow, forward_backward_error, warp_by_flow
+from lili.perception.flow import dense_flow, forward_backward_error, texture_strength, warp_by_flow
 from synthetic import IDENTITY, PINHOLE, noise_texture, render, table_scene, true_flow
 
 TEXTURE = noise_texture(400, 300, 5).astype(np.uint8)
@@ -36,3 +36,14 @@ def test_forward_backward_error_marks_occlusions():
     fb = forward_backward_error(dense_flow(a, b), dense_flow(b, a))
     assert np.median(fb[visible]) < 0.05
     assert np.median(fb[occluded]) > 0.5
+
+
+def test_texture_strength_separates_pattern_from_flat_and_single_edge():
+    rng = np.random.default_rng(3)
+    flat = np.clip(128 + rng.normal(0, 1, (60, 80)), 0, 255).astype(np.uint8)  # szum mediany kilkunastu klatek
+    edge = flat.copy()
+    edge[:, 40:] += 60  # pojedyncza pionowa krawędź: przepływ wzdłuż niej nieokreślony
+    # Próg pewności w pipeline.reliable_mask: 1.0
+    assert np.median(texture_strength(flat)) < 0.5
+    assert np.median(texture_strength(edge)[:, 36:44]) < 0.7
+    assert np.median(texture_strength(TEXTURE)) > 2

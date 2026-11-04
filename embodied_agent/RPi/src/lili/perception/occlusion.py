@@ -19,6 +19,7 @@ class Occlusion:
     jump_x: np.ndarray  # (H, W) skok log(rho) w poprzek kolumn; > 0: bliżej jest prawa strona
     jump_y: np.ndarray  # (H, W) skok log(rho) w poprzek wierszy; > 0: bliżej jest dolna strona
     reliable: np.ndarray  # (H, W) bool, piksele z wiarygodnym rho
+    supported: np.ndarray  # (H, W) bool, pewne lub z pewnym pikselem w promieniu wypełniania
 
 
 def grow(values, known, steps):
@@ -40,13 +41,16 @@ def fill_far(log_rho, reliable, radius=15):
     Niepewne pasy przy krawędziach to tło zasłaniane lub odsłaniane przez bliższy obiekt
     (sam obiekt widać w obu ujęciach), więc wypełnienie tłem stawia skok na konturze obiektu.
     radius powinien obejmować szerokość pasa, czyli różnicę przepływu obiektu i tła.
-    Większe dziury wypełniane są dalej, krok po kroku.
+    Większe dziury wypełniane są dalej, krok po kroku, ale tam wartości z różnych stron stykają
+    się w przypadkowych liniach, więc zwracana jest też maska supported: piksele pewne lub
+    z pewnym pikselem w promieniu radius.
     """
     unknown = 1e30  # cv2.erode zamienia inf na największy float32, więc zwykły duży znacznik
     filled = np.where(reliable, log_rho, unknown).astype(np.float32)
     window = cv2.erode(filled, np.ones((2 * radius + 1, 2 * radius + 1), np.uint8))
     filled = np.where(reliable, filled, window)
     known = filled < unknown
+    supported = known.copy()
     kernel = np.ones((3, 3), np.uint8)
     while not known.all():
         grown = cv2.erode(filled, kernel)
@@ -56,7 +60,7 @@ def fill_far(log_rho, reliable, radius=15):
             break
         filled[new] = grown[new]
         known |= new
-    return filled
+    return filled, supported
 
 
 def drop_small_regions(mask, min_area):
@@ -77,7 +81,7 @@ def occlusion_edges(rho, reliable, jump=0.3, smooth=1.5, min_area=50, near_grow=
     # DIS rozmywa przepływ także na kilku pikselach obiektu przy krawędzi: te odzyskuje
     # krótkie rozszerzenie pewnych wartości, dopiero resztę pasa wypełnia tło
     log_rho, known = grow(np.log(np.where(reliable, rho, 1.0)), reliable, near_grow)
-    log_rho = fill_far(log_rho, known)
+    log_rho, supported = fill_far(log_rho, known)
     log_rho = cv2.GaussianBlur(cv2.medianBlur(log_rho, 3), (0, 0), smooth)
 
     # Gradient przeskalowany tak, że idealny skok o J daje w szczycie J
@@ -89,4 +93,7 @@ def occlusion_edges(rho, reliable, jump=0.3, smooth=1.5, min_area=50, near_grow=
     dx = np.clip(jump_x * 1000, -32767, 32767).astype(np.int16)
     dy = np.clip(jump_y * 1000, -32767, 32767).astype(np.int16)
     edges = cv2.Canny(dx, dy, 0.6 * jump * 1000, jump * 1000, L2gradient=True) > 0
-    return Occlusion(edges, jump_x, jump_y, reliable)
+    # Bez krawędzi tam, gdzie wypełnienie nie ma oparcia w pobliskich pewnych pikselach (duże plamy
+    # bez tekstury); margines na wygładzenie
+    supported_inner = cv2.erode(supported.astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool)
+    return Occlusion(edges & supported_inner, jump_x, jump_y, reliable, supported)

@@ -7,7 +7,7 @@ import numpy as np
 
 from lili.body.geometry import Pose
 from lili.perception.derotation import derotate_pair
-from lili.perception.flow import dense_flow, forward_backward_error, photometric_error
+from lili.perception.flow import dense_flow, forward_backward_error, photometric_error, texture_strength
 from lili.perception.occlusion import occlusion_edges
 from lili.perception.parallax import estimate_translation, parallax, rho_sigma
 from lili.record import schema as s
@@ -74,13 +74,17 @@ class PairResult:
     edges: np.ndarray  # krawędzie zasłaniania
 
 
-def reliable_mask(rho, sigma, photo, valid, max_rel_sigma=0.25, max_photo=8.0):
-    """Piksele z wiarygodnym rho: mała niepewność względna i zgodny obraz po przeniesieniu przepływem.
+def reliable_mask(rho, sigma, photo, texture, valid, max_rel_sigma=0.25, max_photo=8.0, min_texture=1.0):
+    """Piksele z wiarygodnym rho: mała niepewność względna, zgodny obraz po przeniesieniu przepływem
+    i dość tekstury w A.
 
-    Błąd fotometryczny odrzuca tło zasłonięte w B, któremu DIS przypisał ruch obiektu.
+    Błąd fotometryczny odrzuca tło zasłonięte w B, któremu DIS przypisał ruch obiektu. Na plamach
+    bez tekstury (podłoga, gładka ściana) DIS interpoluje przepływ z sąsiedztwa, a błąd
+    fotometryczny jest mały przy każdym przepływie, więc potrzebny jest osobny próg tekstury.
+    Szum sensora daje ok. 0.2 poziomu / px.
     """
     with np.errstate(invalid="ignore"):
-        return valid & (sigma < max_rel_sigma * np.abs(rho)) & (photo < max_photo)
+        return valid & (sigma < max_rel_sigma * np.abs(rho)) & (photo < max_photo) & (texture > min_texture)
 
 
 def process_pair(image_a, image_b, camera, pose, refine_translation=False):
@@ -94,7 +98,7 @@ def process_pair(image_a, image_b, camera, pose, refine_translation=False):
         T = estimate_translation(flow, camera.K, T, valid & (fb < 0.5))
     par = parallax(flow, camera.K, T)
     sigma = rho_sigma(par, fb_error=fb)
-    reliable = reliable_mask(par.rho, sigma, photometric_error(a, b, flow), valid)
+    reliable = reliable_mask(par.rho, sigma, photometric_error(a, b, flow), texture_strength(a), valid)
     occlusion = occlusion_edges(par.rho, reliable)
     # Przy brzegu wspólnego pola widzenia wypełnienie poza nim daje sztuczne skoki
     inner = cv2.erode(valid.astype(np.uint8), np.ones((7, 7), np.uint8)).astype(bool)

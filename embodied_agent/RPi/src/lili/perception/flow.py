@@ -43,3 +43,16 @@ def photometric_error(a, b, flow, window=5):
     """
     warped = warp_by_flow(b.astype(np.float32), flow)
     return cv2.blur(np.abs(warped - a.astype(np.float32)), (window, window))
+
+
+def texture_strength(image, window=7):
+    """Kontrast wzoru do śledzenia [poziomy jasności / px]: pierwiastek mniejszej wartości własnej
+    tensora struktury w oknie. Mały na jednolitych plamach (przepływ zgadywany z sąsiedztwa)
+    i wzdłuż pojedynczych krawędzi (przepływ wzdłuż krawędzi nieokreślony).
+    """
+    g = image.astype(np.float32)
+    gx = cv2.Sobel(g, cv2.CV_32F, 1, 0) / 8
+    gy = cv2.Sobel(g, cv2.CV_32F, 0, 1) / 8
+    sxx, syy, sxy = (cv2.blur(v, (window, window)) for v in (gx * gx, gy * gy, gx * gy))
+    half_trace = (sxx + syy) / 2
+    return np.sqrt(np.maximum(0, half_trace - np.sqrt(((sxx - syy) / 2) ** 2 + sxy**2)))

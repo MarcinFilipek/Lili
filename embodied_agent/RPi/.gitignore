@@ -31,3 +31,6 @@ temp/
 # Packaging
 *.egg-info/
 .pytest_cache/
+
+# Mozaiki z tools/view_session.py --save
+/*.png

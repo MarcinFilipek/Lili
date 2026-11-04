@@ -20,7 +20,8 @@ def test_fill_far_fills_band_with_background():
     values[:, :10] = 2.0  # bliski obiekt po lewej, tło (0) po prawej
     reliable = np.ones((5, 30), bool)
     reliable[:, 10:20] = False  # pas zasłonięcia
-    filled = fill_far(values, reliable)
+    filled, supported = fill_far(values, reliable)
+    assert supported.all()
     np.testing.assert_array_equal(filled[:, 10:20], 0)
     np.testing.assert_array_equal(filled[:, :10], 2)
 
@@ -28,8 +29,9 @@ def test_fill_far_fills_band_with_background():
 def test_fill_far_closes_large_holes():
     reliable = np.zeros((40, 40), bool)
     reliable[0, 0] = True
-    filled = fill_far(np.full((40, 40), 1.5, np.float32), reliable, radius=3)
+    filled, supported = fill_far(np.full((40, 40), 1.5, np.float32), reliable, radius=3)
     np.testing.assert_array_equal(filled, 1.5)
+    assert supported[:4, :4].all() and not supported[4:, 4:].any()
 
 
 def test_grow_extends_known_values():
